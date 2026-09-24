@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import articles from "../data/articles";
+import { getArticles } from "../api/articleApi";
 
 const categories = [
   "All",
@@ -21,7 +21,30 @@ const formatDate = (date) => {
 };
 
 const Articles = () => {
+  const [articles, setArticles] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadArticles = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getArticles();
+
+        setArticles(data);
+      } catch (err) {
+        console.error("Failed to load articles:", err);
+        setError("Unable to load articles.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadArticles();
+  }, []);
 
   const filteredArticles =
     selectedCategory === "All"
@@ -62,44 +85,68 @@ const Articles = () => {
           ))}
         </div>
 
-        <div className="articles-list">
-          {filteredArticles.map((article) => (
-            <article
-              className="article-list-card"
-              key={article.id}
-            >
-              <div className="article-list-main">
-                <span className="article-category">
-                  {article.category}
-                </span>
+        {loading && (
+          <div className="articles-status">
+            <p>Loading articles...</p>
+          </div>
+        )}
 
-                <h2>{article.title}</h2>
+        {!loading && error && (
+          <div className="articles-status">
+            <p>{error}</p>
+          </div>
+        )}
 
-                <p>{article.excerpt}</p>
+        {!loading && !error && filteredArticles.length === 0 && (
+          <div className="articles-status">
+            <p>No articles found.</p>
+          </div>
+        )}
 
-                <div className="article-meta">
-                  <span>
-                    {formatDate(article.publishedAt)}
-                  </span>
-
-                  <span>•</span>
-
-                  <span>
-                    {article.readTimeMinutes} min read
-                  </span>
-                </div>
-              </div>
-
-              <Link
-                to={`/articles/${article.slug}`}
-                className="article-arrow"
-                aria-label={`Read ${article.title}`}
+        {!loading && !error && filteredArticles.length > 0 && (
+          <div className="articles-list">
+            {filteredArticles.map((article) => (
+              <article
+                className="article-list-card"
+                key={article.id}
               >
-                →
-              </Link>
-            </article>
-          ))}
-        </div>
+                <div className="article-list-main">
+                  <span className="article-category">
+                    {article.category}
+                  </span>
+
+                  <h2>{article.title}</h2>
+
+                  <p>{article.excerpt}</p>
+
+                  <div className="article-meta">
+                    <span>
+                      {formatDate(
+                        article.publishedAt || article.createdAt
+                      )}
+                    </span>
+
+                    <span>•</span>
+
+                    <span>
+                      {article.readTimeMinutes
+                        ? `${article.readTimeMinutes} min read`
+                        : "Article"}
+                    </span>
+                  </div>
+                </div>
+
+                <Link
+                  to={`/articles/${article.slug}`}
+                  className="article-arrow"
+                  aria-label={`Read ${article.title}`}
+                >
+                  →
+                </Link>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );

@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import articles from "../data/articles";
+import { getArticleBySlug } from "../api/articleApi";
 
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString("en-US", {
@@ -12,23 +13,57 @@ const formatDate = (date) => {
 const Article = () => {
   const { slug } = useParams();
 
-  const article = articles.find(
-    (item) => item.slug === slug
-  );
+  const [article, setArticle] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!article) {
+  useEffect(() => {
+    const loadArticle = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const data = await getArticleBySlug(slug);
+
+        setArticle(data);
+      } catch (err) {
+        console.error("Failed to load article:", err);
+
+        if (err.response?.status === 404) {
+          setError("Article not found.");
+        } else {
+          setError("Unable to load article.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadArticle();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <main className="article-page">
+        <section className="article-not-found">
+          <p>Loading article...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (error || !article) {
     return (
       <main className="article-page">
         <section className="article-not-found">
           <p className="eyebrow">404</p>
 
           <h1>
-            Article not found
-            <span className="accent-dot">.</span>
+            Article not found<span className="accent-dot">.</span>
           </h1>
 
           <p>
-            The article you're looking for doesn't exist.
+            {error || "The article you're looking for doesn't exist."}
           </p>
 
           <Link to="/articles" className="back-link">
@@ -59,59 +94,27 @@ const Article = () => {
 
           <div className="article-meta">
             <span>
-              {formatDate(article.publishedAt)}
+              {formatDate(
+                article.publishedAt || article.createdAt
+              )}
             </span>
 
             <span className="meta-dot">•</span>
 
             <span>
-              {article.readTimeMinutes} min read
+              {article.readTimeMinutes
+                ? `${article.readTimeMinutes} min read`
+                : "Article"}
             </span>
           </div>
         </header>
 
         <div className="article-body">
-          {article.content.map((block, index) => {
-            if (block.type === "heading") {
-              return (
-                <h2 key={index}>
-                  {block.text}
-                </h2>
-              );
-            }
-
-            if (block.type === "code") {
-              return (
-                <div
-                  className="article-code-wrapper"
-                  key={index}
-                >
-                  <div className="code-header">
-                    <span>
-                      {block.language || "code"}
-                    </span>
-                  </div>
-
-                  <pre className="article-code">
-                    <code>{block.code}</code>
-                  </pre>
-                </div>
-              );
-            }
-
-            return (
-              <p key={index}>
-                {block.text}
-              </p>
-            );
-          })}
+          <p>{article.content}</p>
         </div>
 
         <footer className="article-footer">
-          <Link
-            to="/articles"
-            className="back-link"
-          >
+          <Link to="/articles" className="back-link">
             ← Back to all articles
           </Link>
         </footer>
