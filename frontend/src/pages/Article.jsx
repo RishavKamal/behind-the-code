@@ -1,6 +1,14 @@
 import { Link, useParams } from "react-router-dom";
 import articles from "../data/articles";
 
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 const Article = () => {
   const { slug } = useParams();
 
@@ -23,10 +31,7 @@ const Article = () => {
             The article you're looking for doesn't exist.
           </p>
 
-          <Link
-            to="/articles"
-            className="back-link"
-          >
+          <Link to="/articles" className="back-link">
             ← Back to articles
           </Link>
         </section>
@@ -36,17 +41,9 @@ const Article = () => {
 
   return (
     <main className="article-page">
-
       <article>
-
-        {/* ================= ARTICLE HEADER ================= */}
-
         <header className="article-header">
-
-          <Link
-            to="/articles"
-            className="back-link"
-          >
+          <Link to="/articles" className="back-link">
             ← All articles
           </Link>
 
@@ -54,29 +51,27 @@ const Article = () => {
             {article.category}
           </div>
 
-          <h1>
-            {article.title}
-          </h1>
+          <h1>{article.title}</h1>
 
           <p className="article-excerpt">
             {article.excerpt}
           </p>
 
           <div className="article-meta">
-            <span>{article.date}</span>
-            <span className="meta-dot">•</span>
-            <span>{article.readTime}</span>
-          </div>
+            <span>
+              {formatDate(article.publishedAt)}
+            </span>
 
+            <span className="meta-dot">•</span>
+
+            <span>
+              {article.readTimeMinutes} min read
+            </span>
+          </div>
         </header>
 
-
-        {/* ================= ARTICLE BODY ================= */}
-
         <div className="article-body">
-
           {article.content.map((block, index) => {
-
             if (block.type === "heading") {
               return (
                 <h2 key={index}>
@@ -91,21 +86,15 @@ const Article = () => {
                   className="article-code-wrapper"
                   key={index}
                 >
-
                   <div className="code-header">
-
                     <span>
                       {block.language || "code"}
                     </span>
-
                   </div>
 
                   <pre className="article-code">
-                    <code>
-                      {block.code}
-                    </code>
+                    <code>{block.code}</code>
                   </pre>
-
                 </div>
               );
             }
@@ -116,25 +105,17 @@ const Article = () => {
               </p>
             );
           })}
-
         </div>
 
-
-        {/* ================= ARTICLE FOOTER ================= */}
-
         <footer className="article-footer">
-
           <Link
             to="/articles"
             className="back-link"
           >
             ← Back to all articles
           </Link>
-
         </footer>
-
       </article>
-
     </main>
   );
 };

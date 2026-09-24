@@ -12,6 +12,14 @@ const categories = [
   "Debugging",
 ];
 
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 const Articles = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -70,9 +78,15 @@ const Articles = () => {
                 <p>{article.excerpt}</p>
 
                 <div className="article-meta">
-                  <span>{article.date}</span>
+                  <span>
+                    {formatDate(article.publishedAt)}
+                  </span>
+
                   <span>•</span>
-                  <span>{article.readTime}</span>
+
+                  <span>
+                    {article.readTimeMinutes} min read
+                  </span>
                 </div>
               </div>
 
