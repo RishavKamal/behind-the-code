@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 import { getArticleBySlug } from "../api/articleApi";
 
 const formatDate = (date) => {
@@ -110,7 +111,9 @@ const Article = () => {
         </header>
 
         <div className="article-body">
-          <p>{article.content}</p>
+          <ReactMarkdown>
+            {article.content}
+          </ReactMarkdown>
         </div>
 
         <footer className="article-footer">

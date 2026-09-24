@@ -1,8 +1,38 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://behind-the-code.onrender.com/api",
+  baseURL: import.meta.env.VITE_API_URL,
 });
+
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("btc-token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+API.interceptors.response.use(
+  (response) => response,
+
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("btc-token");
+      localStorage.removeItem("btc-user");
+
+      if (window.location.pathname.startsWith("/admin")) {
+        window.location.href = "/login";
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export const getArticles = async () => {
   const response = await API.get("/articles");

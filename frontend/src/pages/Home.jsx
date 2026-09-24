@@ -41,8 +41,18 @@ const topics = [
 const Home = () => {
   return (
     <div className="home">
+      {/* =========================================
+          HERO
+      ========================================= */}
+
       <section className="hero">
         <div className="hero-content">
+          <img
+            src="/favicon.svg"
+            alt="Behind the Code"
+            className="hero-logo"
+          />
+
           <p className="eyebrow">A DEVELOPER JOURNAL</p>
 
           <h1>
@@ -50,8 +60,17 @@ const Home = () => {
             <br />
             Code<span className="accent-dot">.</span>
           </h1>
+
+          <p className="hero-description">
+            Notes, lessons, projects, and ideas from
+            behind the code.
+          </p>
         </div>
       </section>
+
+      {/* =========================================
+          FEATURED
+      ========================================= */}
 
       <section className="blog-section">
         <div className="section-heading">
@@ -100,6 +119,10 @@ const Home = () => {
         )}
       </section>
 
+      {/* =========================================
+          LATEST ARTICLES
+      ========================================= */}
+
       <section className="blog-section">
         <div className="section-heading">
           <div>
@@ -144,6 +167,10 @@ const Home = () => {
             ))}
         </div>
       </section>
+
+      {/* =========================================
+          TOPICS
+      ========================================= */}
 
       <section className="blog-section topics-section">
         <div className="section-heading">
