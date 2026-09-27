@@ -37,7 +37,7 @@ export default function Footer() {
         <div className="mt-8 flex flex-col gap-2 border-t border-[#252525] pt-6 text-sm text-[#777777] sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Rishav Kamal</p>
 
-          <p>Built with Next.js</p>
+          <p>Built with Love</p>
         </div>
       </div>
     </footer>
