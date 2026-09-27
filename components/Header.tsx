@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { createClient } from "@/components/lib/supabase/client";
@@ -16,7 +16,6 @@ const navigation = [
 
 export default function Header() {
   const pathname = usePathname();
-  const router = useRouter();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -236,6 +235,13 @@ export default function Header() {
     setProfileOpen(false);
     setMenuOpen(false);
 
+    /*
+     * Remember exactly where the user is before signing out.
+     * This lets them remain on the same page after logout.
+     */
+    const currentPath =
+      window.location.pathname + window.location.search;
+
     const supabase = createClient();
 
     await supabase.auth.signOut();
@@ -246,8 +252,14 @@ export default function Header() {
     setUserName("");
     setAvatarUrl("");
 
-    router.push("/");
-    router.refresh();
+    /*
+     * Full browser navigation back to the same page.
+     *
+     * Public pages remain open after logout.
+     * Protected pages are handled by the proxy and will
+     * redirect the logged-out user to /login.
+     */
+    window.location.href = currentPath;
   }
 
   return (

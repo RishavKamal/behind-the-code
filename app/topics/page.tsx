@@ -1,350 +1,303 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/components/lib/supabase/server";
 
-import { createClient } from "@/components/lib/supabase/client";
+const principles = [
+  {
+    number: "01",
+    title: "Build",
+    description:
+      "Create things that solve real problems. Projects turn ideas into something useful, testable, and real.",
+  },
+  {
+    number: "02",
+    title: "Learn",
+    description:
+      "Understand what happens behind the code — the mistakes, experiments, debugging, and decisions that shape the final result.",
+  },
+  {
+    number: "03",
+    title: "Share",
+    description:
+      "Document what you discover so difficult concepts, problems, and solutions become easier for someone else to understand.",
+  },
+  {
+    number: "04",
+    title: "Improve",
+    description:
+      "Keep refining the work. Good software is rarely created perfectly on the first attempt.",
+  },
+];
 
-type Topic = {
-  name: string;
-  slug: string;
-  count: number;
-};
+const journalSections = [
+  {
+    number: "01",
+    title: "Technical Articles",
+    description:
+      "Programming concepts, frameworks, tools, and practical technical explanations.",
+  },
+  {
+    number: "02",
+    title: "Project Notes",
+    description:
+      "The decisions, problems, experiments, and solutions behind projects.",
+  },
+  {
+    number: "03",
+    title: "Learning",
+    description:
+      "Notes from studying new technologies, solving problems, and understanding concepts from first principles.",
+  },
+  {
+    number: "04",
+    title: "Developer Perspectives",
+    description:
+      "Thoughts about building software and becoming a better developer through the process.",
+  },
+];
 
-export default function TopicsPage() {
-  const [topics, setTopics] = useState<Topic[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+export default async function AboutPage() {
+  const supabase = await createClient();
 
-  useEffect(() => {
-    let cancelled = false;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    async function loadTopics() {
-      try {
-        setLoading(true);
-        setError("");
-
-        const supabase = createClient();
-
-        const [
-          {
-            data: { user },
-          },
-          { data, error: articlesError },
-        ] = await Promise.all([
-          supabase.auth.getUser(),
-          supabase
-            .from("articles")
-            .select("category")
-            .eq("status", "published"),
-        ]);
-
-        if (articlesError) {
-          throw articlesError;
-        }
-
-        if (cancelled) {
-          return;
-        }
-
-        setIsLoggedIn(Boolean(user));
-
-        const topicMap = new Map<string, number>();
-
-        for (const article of data ?? []) {
-          const category =
-            typeof article.category === "string"
-              ? article.category.trim()
-              : "";
-
-          if (!category) {
-            continue;
-          }
-
-          const normalizedCategory = category.toLowerCase();
-
-          const existingCategory = Array.from(topicMap.keys()).find(
-            (topic) => topic.toLowerCase() === normalizedCategory,
-          );
-
-          if (existingCategory) {
-            topicMap.set(
-              existingCategory,
-              (topicMap.get(existingCategory) ?? 0) + 1,
-            );
-          } else {
-            topicMap.set(category, 1);
-          }
-        }
-
-        const topicList: Topic[] = Array.from(topicMap.entries())
-          .map(([name, count]) => ({
-            name,
-            count,
-            slug: name.toLowerCase().replace(/\s+/g, "-"),
-          }))
-          .sort((a, b) => {
-            if (b.count !== a.count) {
-              return b.count - a.count;
-            }
-
-            return a.name.localeCompare(b.name);
-          });
-
-        setTopics(topicList);
-      } catch (topicError) {
-        console.error("Failed to load topics:", topicError);
-
-        if (!cancelled) {
-          setError("Unable to load topics right now.");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadTopics();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const filteredTopics = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
-    if (!query) {
-      return topics;
-    }
-
-    return topics.filter((topic) =>
-      topic.name.toLowerCase().includes(query),
-    );
-  }, [topics, searchQuery]);
+  const writeArticleHref = user
+    ? "/dashboard/articles/new"
+    : "/login?redirectTo=/dashboard/articles/new";
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f5f5f1] text-[#151515]">
+    <main className="min-h-screen overflow-hidden bg-[#f8f8f5] text-[#171717]">
       {/* =========================================================
-          HERO / TOPIC INDEX
+          HERO
       ========================================================= */}
-      <section
-        className="relative overflow-hidden border-b border-[#dcdcd5]"
-        style={{
-          background:
-            "radial-gradient(circle at 88% 18%, rgba(155,182,255,0.30) 0%, rgba(155,182,255,0.14) 24%, transparent 48%), #f5f5f1",
-        }}
-      >
+      <section className="relative border-b border-[#deded9]">
         {/* Editorial grid */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-60"
+          className="pointer-events-none absolute inset-0 animate-about-grid opacity-60 motion-reduce:animate-none"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(21,21,21,0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(21,21,21,0.055) 1px, transparent 1px)",
-            backgroundSize: "52px 52px",
+              "linear-gradient(#e7e7e2 1px, transparent 1px), linear-gradient(90deg, #e7e7e2 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
             maskImage:
-              "linear-gradient(to bottom, black 0%, black 88%, transparent 100%)",
+              "linear-gradient(to bottom, black 0%, black 72%, transparent 100%)",
             WebkitMaskImage:
-              "linear-gradient(to bottom, black 0%, black 88%, transparent 100%)",
+              "linear-gradient(to bottom, black 0%, black 72%, transparent 100%)",
           }}
         />
 
-        {/* Soft white glow */}
-        <div
-          className="pointer-events-none absolute -left-32 top-1/2 h-[380px] w-[380px] -translate-y-1/2 rounded-full blur-[120px]"
-          style={{
-            background: "rgba(255,255,255,0.75)",
-          }}
-        />
+        {/* Soft atmosphere */}
+        <div className="pointer-events-none absolute right-[8%] top-[-120px] h-[480px] w-[480px] animate-about-glow rounded-full bg-[#dfe8ff]/45 blur-[120px] motion-reduce:animate-none" />
 
-        {/* Stronger blue atmosphere on the right */}
-        <div
-          className="pointer-events-none absolute -right-32 -top-24 h-[520px] w-[520px] rounded-full blur-[130px]"
-          style={{
-            background: "rgba(155,182,255,0.18)",
-          }}
-        />
-
-        <div className="relative mx-auto max-w-7xl px-6 pb-20 pt-14 sm:px-8 md:pb-24 md:pt-16 lg:px-10">
-          {/* Small identity */}
-          <div className="flex items-center justify-between">
+        <div className="relative mx-auto max-w-6xl px-6 pb-24 pt-20 sm:px-8 lg:px-10 lg:pb-28 lg:pt-24">
+          {/* Identity */}
+          <div className="flex animate-about-fade-up items-start justify-between motion-reduce:animate-none">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#151515] text-xs font-bold text-white shadow-lg shadow-black/10">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#171717] text-[10px] font-semibold text-white transition-transform duration-300 hover:-rotate-3">
                 BT
               </div>
 
               <div>
-                <p className="text-xs font-bold tracking-tight">
+                <p className="text-xs font-semibold">
                   Behind the Code
                 </p>
 
-                <p className="text-[10px] uppercase tracking-[0.18em] text-[#888881]">
-                  Developer journal
+                <p className="mt-0.5 text-[8px] uppercase tracking-[0.2em] text-[#999992]">
+                  Developer Journal
                 </p>
               </div>
             </div>
 
-            <div className="hidden rounded-full border border-[#d8d8d1] bg-white/75 px-4 py-2 backdrop-blur-sm sm:block">
-              <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#777770]">
-                Topic Index
+            <div className="hidden rounded-full border border-[#deded9] bg-white/80 px-4 py-2 sm:block">
+              <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#777771]">
+                About the journal
               </span>
             </div>
           </div>
 
-          {/* Hero content */}
-          <div className="mt-20 grid gap-14 lg:grid-cols-[1fr_0.55fr] lg:items-end lg:gap-20">
-            {/* Left */}
+          {/* Hero */}
+          <div className="mt-20 grid gap-16 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-end">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#3568e8]">
-                Explore · Discover · Learn
+              <p
+                className="animate-about-fade-up text-[10px] font-semibold uppercase tracking-[0.22em] text-[#3568e8] motion-reduce:animate-none"
+                style={{ animationDelay: "80ms" }}
+              >
+                Build · Learn · Share
               </p>
 
-              <h1 className="mt-6 max-w-4xl text-[4.5rem] font-bold leading-[0.86] tracking-[-0.075em] sm:text-[6rem] md:text-[7.5rem] lg:text-[8.2rem]">
-                Find your
+              <h1
+                className="mt-6 max-w-4xl animate-about-fade-up text-[clamp(4rem,8vw,7.5rem)] font-semibold leading-[0.84] tracking-[-0.07em] motion-reduce:animate-none"
+                style={{ animationDelay: "140ms" }}
+              >
+                Behind
                 <br />
-                <span className="text-[#3568e8]">topic.</span>
+                the Code.
               </h1>
 
-              <p className="mt-8 max-w-2xl text-base leading-7 text-[#686861] md:text-lg">
-                Explore the ideas, technologies, projects, and lessons
-                documented throughout Behind the Code.
+              <p
+                className="mt-9 max-w-xl animate-about-fade-up text-base leading-7 text-[#777771] motion-reduce:animate-none sm:text-lg"
+                style={{ animationDelay: "220ms" }}
+              >
+                A developer journal about the ideas, lessons, projects,
+                experiments, and decisions that happen behind the finished
+                product.
               </p>
+
+              <div
+                className="mt-8 flex animate-about-fade-up flex-wrap gap-3 motion-reduce:animate-none"
+                style={{ animationDelay: "300ms" }}
+              >
+                <Link
+                  href="/articles"
+                  className="inline-flex items-center gap-3 rounded-xl bg-[#171717] px-5 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#292929] hover:shadow-[0_10px_25px_rgba(20,20,20,0.12)]"
+                >
+                  Explore articles
+                  <span
+                    aria-hidden="true"
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  >
+                    →
+                  </span>
+                </Link>
+
+                <Link
+                  href="/topics"
+                  className="inline-flex items-center rounded-xl border border-[#deded9] bg-white px-5 py-3 text-sm font-semibold text-[#171717] transition duration-300 hover:-translate-y-0.5 hover:border-[#bdbdb6] hover:shadow-[0_10px_25px_rgba(20,20,20,0.06)]"
+                >
+                  Browse topics
+                </Link>
+              </div>
             </div>
 
-            {/* Right journal card */}
-            <div className="relative mx-auto w-full max-w-[430px] lg:mx-0 lg:ml-auto">
-              <div
-                className="absolute -inset-5 rounded-[2rem] blur-3xl"
-                style={{
-                  background: "rgba(155,182,255,0.16)",
-                }}
-              />
+            {/* Unique About-page visual */}
+            <div
+              className="relative animate-about-scale-in motion-reduce:animate-none"
+              style={{ animationDelay: "220ms" }}
+            >
+              {/* Background index card */}
+              <div className="absolute -right-3 -top-6 h-full w-full rounded-3xl border border-[#deded9] bg-white/50 transition-transform duration-500 group-hover:translate-x-1 sm:-right-5 sm:-top-8" />
 
-              <div className="relative overflow-hidden rounded-[1.75rem] border border-[#d6d6cf] bg-white/95 shadow-[0_25px_70px_rgba(20,20,20,0.08)] backdrop-blur-sm">
-                {/* Card header */}
-                <div className="flex items-center justify-between border-b border-[#deded9] px-6 py-5">
+              {/* Main journal card */}
+              <div className="relative rounded-3xl border border-[#deded9] bg-white p-7 shadow-[0_25px_60px_rgba(20,20,20,0.07)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_30px_70px_rgba(20,20,20,0.1)] sm:p-8">
+                <div className="flex items-center justify-between border-b border-[#deded9] pb-5">
                   <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#999991]">
-                      Journal index
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
+                      Journal Index
                     </p>
 
-                    <p className="mt-1 text-sm font-bold">
+                    <p className="mt-1 text-sm font-semibold">
                       What happens behind the code?
                     </p>
                   </div>
 
-                  <span className="font-mono text-[9px] text-[#999991]">
+                  <span className="font-mono text-[10px] text-[#999992]">
                     2026
                   </span>
                 </div>
 
-                {/* Card items */}
                 <div className="divide-y divide-[#deded9]">
-                  <div className="flex items-center gap-5 px-6 py-6">
-                    <span className="font-mono text-[9px] text-[#aaa9a1]">
-                      01
-                    </span>
+                  {principles.slice(0, 3).map((principle, index) => (
+                    <div
+                      key={principle.number}
+                      className="group flex animate-about-fade-up items-center gap-5 py-6 motion-reduce:animate-none"
+                      style={{
+                        animationDelay: `${380 + index * 80}ms`,
+                      }}
+                    >
+                      <span className="font-mono text-[10px] text-[#999992]">
+                        {principle.number}
+                      </span>
 
-                    <div>
-                      <p className="text-lg font-bold tracking-tight">
-                        Learn
-                      </p>
+                      <div className="flex-1">
+                        <p className="text-lg font-semibold tracking-[-0.02em]">
+                          {principle.title}
+                        </p>
 
-                      <p className="mt-1 text-xs leading-5 text-[#777771]">
-                        Understand concepts, experiments, debugging, and
-                        decisions.
-                      </p>
+                        <p className="mt-1 text-xs leading-5 text-[#777771]">
+                          {principle.description.split(".")[0]}.
+                        </p>
+                      </div>
+
+                      <span className="text-lg text-[#c5c5bf] transition duration-300 group-hover:translate-x-1 group-hover:text-[#3568e8]">
+                        →
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-5 px-6 py-6">
-                    <span className="font-mono text-[9px] text-[#aaa9a1]">
-                      02
-                    </span>
-
-                    <div>
-                      <p className="text-lg font-bold tracking-tight">
-                        Build
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-[#777771]">
-                        Turn ideas into projects and real software.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-5 px-6 py-6">
-                    <span className="font-mono text-[9px] text-[#aaa9a1]">
-                      03
-                    </span>
-
-                    <div>
-                      <p className="text-lg font-bold tracking-tight">
-                        Share
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-[#777771]">
-                        Document discoveries so others can learn too.
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
 
-                {/* Card footer */}
-                <div className="flex items-center justify-between border-t border-[#deded9] bg-[#f7f7f4] px-6 py-4">
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#999991]">
-                    Current focus
-                  </span>
+                <div className="mt-2 border-t border-[#deded9] pt-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
+                      The process matters
+                    </span>
 
-                  <span className="flex items-center gap-2 text-xs font-semibold">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#3568e8]" />
-                    Document the process.
-                  </span>
+                    <span className="h-2 w-2 animate-about-pulse rounded-full bg-[#3568e8] motion-reduce:animate-none" />
+                  </div>
                 </div>
+              </div>
+
+              {/* Small floating note */}
+              <div className="absolute -bottom-7 -left-4 rounded-xl border border-[#deded9] bg-[#171717] px-5 py-4 text-white shadow-[0_15px_35px_rgba(20,20,20,0.12)] transition duration-300 hover:-translate-y-1 sm:-left-8">
+                <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                  Current focus
+                </p>
+
+                <p className="mt-1.5 text-xs font-medium">
+                  Document the process.
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Editorial strip */}
-          <div className="mt-20 border-y border-[#deded9]">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-              <div className="flex min-h-[58px] items-center justify-center border-b border-r border-[#deded9] px-3 py-3 lg:border-b-0">
-                <span className="text-center text-[9px] font-semibold uppercase tracking-[0.14em] text-[#3568e8]">
-                  Topics
-                </span>
-              </div>
+          {/* About page closing line */}
+          <div
+            className="mt-24 animate-about-fade-up border-y border-[#deded9] py-5 motion-reduce:animate-none"
+            style={{ animationDelay: "650ms" }}
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#777771]">
+                Behind the Code
+              </p>
 
-              <div className="flex min-h-[58px] items-center justify-center border-b border-[#deded9] px-3 py-3 sm:border-r lg:border-b-0">
-                <span className="text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-[#777771]">
-                  Technology
-                </span>
-              </div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#999991]">
+                The ideas behind the work
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              <div className="flex min-h-[58px] items-center justify-center border-b border-r border-[#deded9] px-3 py-3 lg:border-b-0">
-                <span className="text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-[#777771]">
-                  Development
-                </span>
-              </div>
+      {/* =========================================================
+          THE IDEA
+      ========================================================= */}
+      <section className="border-b border-[#deded9]">
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8 lg:px-10 lg:py-28">
+          <div className="grid gap-12 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="animate-about-fade-up motion-reduce:animate-none">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#777771]">
+                01 / The Idea
+              </p>
+            </div>
 
-              <div className="flex min-h-[58px] items-center justify-center border-b border-[#deded9] px-3 py-3 sm:border-r lg:border-b-0">
-                <span className="text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-[#777771]">
-                  Projects
-                </span>
-              </div>
+            <div className="animate-about-fade-up motion-reduce:animate-none">
+              <h2 className="max-w-4xl text-3xl font-semibold leading-[1.1] tracking-[-0.04em] sm:text-4xl lg:text-5xl">
+                Software is more than the final result.
+                <br className="hidden sm:block" /> There are decisions,
+                experiments, mistakes, and lessons behind every piece of code.
+              </h2>
 
-              <div className="flex min-h-[58px] items-center justify-center border-r border-[#deded9] px-3 py-3">
-                <span className="text-center text-[9px] font-semibold uppercase tracking-[0.16em] text-[#777771]">
-                  Learning
-                </span>
-              </div>
+              <div className="mt-12 grid gap-8 md:grid-cols-2">
+                <p className="text-[15px] leading-7 text-[#777771]">
+                  Behind the Code is a place to document those parts. It is
+                  designed for developers who want to share how they approached
+                  a problem, what they discovered while building something,
+                  and what they learned along the way.
+                </p>
 
-              <div className="flex min-h-[58px] items-center justify-center px-3 py-3">
-                <span className="text-center text-[9px] font-semibold uppercase tracking-[0.14em] text-[#3568e8]">
-                  The Process
-                </span>
+                <p className="text-[15px] leading-7 text-[#777771]">
+                  The goal is not simply to show finished projects. It is to
+                  make the process behind them easier to understand.
+                </p>
               </div>
             </div>
           </div>
@@ -352,234 +305,338 @@ export default function TopicsPage() {
       </section>
 
       {/* =========================================================
-          BROWSE TOPICS
+          WHY IT EXISTS
       ========================================================= */}
-      <section className="relative overflow-hidden bg-white">
-        {/* Very subtle blue atmosphere */}
-        <div
-          className="pointer-events-none absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full blur-[130px]"
-          style={{
-            background: "rgba(155,182,255,0.10)",
-          }}
-        />
-
-        <div className="relative mx-auto max-w-7xl px-6 py-20 sm:px-8 md:py-24 lg:px-10">
-          {/* Section heading */}
-          <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#3568e8]">
-                The index
-              </p>
-
-              <h2 className="mt-3 text-4xl font-bold tracking-[-0.055em] sm:text-5xl">
-                Browse topics
-                <span className="text-[#3568e8]">.</span>
-              </h2>
-
-              <p className="mt-4 max-w-lg text-sm leading-6 text-[#777770]">
-                Every topic below comes from published articles in the
-                journal.
+      <section className="border-b border-[#deded9]">
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8 lg:px-10 lg:py-28">
+          <div className="grid gap-12 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="animate-about-fade-up motion-reduce:animate-none">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#777771]">
+                02 / Why It Exists
               </p>
             </div>
 
-            {/* Search */}
-            <div className="w-full md:max-w-xs">
-              <label htmlFor="topic-search" className="sr-only">
-                Search topics
-              </label>
+            <div className="animate-about-scale-in relative overflow-hidden rounded-3xl border border-[#deded9] bg-white p-8 transition duration-500 hover:shadow-[0_25px_60px_rgba(20,20,20,0.07)] motion-reduce:animate-none sm:p-12 lg:p-14">
+              <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[#dfe8ff]/35 blur-3xl" />
 
               <div className="relative">
-                <input
-                  id="topic-search"
-                  type="search"
-                  value={searchQuery}
-                  onChange={(event) =>
-                    setSearchQuery(event.target.value)
-                  }
-                  placeholder="Search topics..."
-                  className="h-12 w-full appearance-none rounded-xl border border-[#d9d9d2] bg-[#f8f8f5] px-4 pr-10 text-sm text-[#171717] outline-none transition-all placeholder:text-[#aaa9a3] focus:border-[#3568e8]/50 focus:bg-white focus:ring-4 focus:ring-[#3568e8]/5"
-                />
+                <div className="mb-8 flex items-center justify-between">
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
+                    A simple idea
+                  </span>
 
-                <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 font-mono text-[10px] text-[#999991]">
-                  /
-                </span>
+                  <span className="font-mono text-[10px] text-[#999992]">
+                    02
+                  </span>
+                </div>
+
+                <h2 className="max-w-3xl text-4xl font-semibold leading-[1.02] tracking-[-0.05em] sm:text-5xl lg:text-6xl">
+                  Learn from the process,
+                  <br />
+                  not only the result.
+                </h2>
+
+                <div className="mt-10 grid gap-8 md:grid-cols-2">
+                  <p className="text-[15px] leading-7 text-[#777771]">
+                    Tutorials are useful for learning individual concepts, but
+                    real development introduces problems that are difficult to
+                    encounter while following a fixed example.
+                  </p>
+
+                  <p className="text-[15px] leading-7 text-[#777771]">
+                    A project can fail because of a small configuration
+                    mistake. An implementation can change after discovering a
+                    better approach. Those moments are worth documenting.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Loading */}
-          {loading && (
-            <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-40 animate-pulse rounded-[1.5rem] border border-[#deded9] bg-[#f5f5f1]"
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Error */}
-          {!loading && error && (
-            <div className="mt-12 rounded-[1.5rem] border border-[#deded9] bg-[#f7f7f4] px-6 py-14 text-center">
-              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[#151515] text-sm font-bold text-white">
-                !
-              </div>
-
-              <p className="mt-5 text-lg font-bold">
-                Unable to load topics
-              </p>
-
-              <p className="mt-2 text-sm text-[#777771]">
-                {error}
-              </p>
-            </div>
-          )}
-
-          {/* Empty state */}
-          {!loading && !error && filteredTopics.length === 0 && (
-            <div className="mt-12 rounded-[1.5rem] border border-[#deded9] bg-[#f7f7f4] px-6 py-14 text-center">
-              {topics.length === 0 ? (
-                <>
-                  <p className="text-lg font-bold">
-                    No topics yet.
-                  </p>
-
-                  <p className="mt-2 text-sm text-[#777771]">
-                    Published articles will automatically appear here as
-                    topics.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-lg font-bold">
-                    No matching topics.
-                  </p>
-
-                  <p className="mt-2 text-sm text-[#777771]">
-                    Try a different search term.
-                  </p>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Topic cards */}
-          {!loading && !error && filteredTopics.length > 0 && (
-            <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredTopics.map((topic, index) => (
-                <Link
-                  key={topic.name}
-                  href={`/articles?topic=${encodeURIComponent(
-                    topic.slug,
-                  )}`}
-                  className="group relative min-h-[190px] overflow-hidden rounded-[1.5rem] border border-[#d5d5ce] bg-[#f6f6f2] p-6 shadow-[0_8px_30px_rgba(20,20,20,0.025)] transition-all duration-300 hover:-translate-y-1 hover:border-[#3568e8]/35 hover:bg-white hover:shadow-[0_22px_50px_rgba(20,20,20,0.08)]"
-                >
-                  {/* Large background number */}
-                  <span className="absolute -right-2 -top-6 text-[130px] font-black leading-none tracking-[-0.12em] text-[#e9e9e3] transition-colors duration-300 group-hover:text-[#e1e8ff]">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-
-                  <div className="relative flex h-full flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#999991]">
-                        Topic
-                      </span>
-
-                      <span className="font-mono text-[9px] text-[#aaa9a1]">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                    </div>
-
-                    <div className="mt-12">
-                      <h3 className="max-w-[85%] text-2xl font-bold tracking-[-0.04em] transition-colors group-hover:text-[#3568e8]">
-                        {topic.name}
-                      </h3>
-
-                      <div className="mt-4 flex items-center justify-between">
-                        <span className="text-xs text-[#777771]">
-                          {topic.count}{" "}
-                          {topic.count === 1
-                            ? "article"
-                            : "articles"}
-                        </span>
-
-                        <span className="text-xl text-[#aaa9a1] transition-all group-hover:translate-x-1 group-hover:text-[#3568e8]">
-                          ↗
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
         </div>
       </section>
 
       {/* =========================================================
-          WRITE AN ARTICLE CTA
+          PRINCIPLES
       ========================================================= */}
-      <section className="relative overflow-hidden border-t border-[#262626] bg-[#151515] text-white">
-        {/* Soft blue atmospheric glow */}
-        <div
-          className="pointer-events-none absolute -right-24 -top-32 h-[500px] w-[500px] rounded-full blur-[130px]"
-          style={{
-            background: "rgba(155,182,255,0.14)",
-          }}
-        />
-
-        {/* Very subtle secondary glow */}
-        <div
-          className="pointer-events-none absolute -left-40 bottom-[-220px] h-[420px] w-[420px] rounded-full blur-[130px]"
-          style={{
-            background: "rgba(255,255,255,0.035)",
-          }}
-        />
-
-        <div className="relative mx-auto max-w-7xl px-6 py-20 sm:px-8 md:py-24 lg:px-10">
-          <div className="flex flex-col gap-12 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#9bb6ff]">
-                Keep building
-              </p>
-
-              <h2 className="mt-4 text-4xl font-bold leading-[0.95] tracking-[-0.055em] text-white sm:text-5xl md:text-6xl">
-                Have something
-                <br />
-                worth documenting?
-              </h2>
-
-              <p className="mt-6 max-w-xl text-sm leading-6 text-[#a8a8a1]">
-                Turn your projects, experiments, and lessons into something
-                another developer can learn from.
+      <section className="border-b border-[#deded9]">
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8 lg:px-10 lg:py-28">
+          <div className="grid gap-12 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="animate-about-fade-up motion-reduce:animate-none">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#777771]">
+                03 / Principles
               </p>
             </div>
 
-            <Link
-              href={isLoggedIn ? "/dashboard/articles/new" : "/register"}
-              className="group inline-flex w-fit items-center gap-3 rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-[#151515] transition-all hover:-translate-y-0.5 hover:bg-[#f0f0ed] hover:shadow-xl hover:shadow-black/20"
-            >
-              Write an article
+            <div>
+              <div className="divide-y divide-[#deded9] border-y border-[#deded9]">
+                {principles.map((principle, index) => (
+                  <article
+                    key={principle.number}
+                    className="grid animate-about-fade-up gap-6 py-8 motion-reduce:animate-none md:grid-cols-[70px_180px_minmax(0,1fr)] md:items-start"
+                    style={{
+                      animationDelay: `${index * 90}ms`,
+                    }}
+                  >
+                    <span className="font-mono text-[11px] text-[#999992]">
+                      {principle.number}
+                    </span>
 
-              <span className="transition-transform group-hover:translate-x-1">
-                →
-              </span>
-            </Link>
-          </div>
+                    <h3 className="text-2xl font-semibold tracking-[-0.03em] transition-transform duration-300 hover:translate-x-1">
+                      {principle.title}
+                    </h3>
 
-          {/* Bottom editorial line */}
-          <div className="mt-16 flex items-center justify-between border-t border-[#303030] pt-5">
-            <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#666660]">
-              Behind the Code
-            </span>
-
-            <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#666660]">
-              Build · Learn · Share
-            </span>
+                    <p className="max-w-xl text-[15px] leading-7 text-[#777771]">
+                      {principle.description}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
+
+      {/* =========================================================
+          WHAT WE SHARE
+      ========================================================= */}
+      <section className="border-b border-[#deded9]">
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8 lg:px-10 lg:py-28">
+          <div className="grid gap-12 lg:grid-cols-[220px_minmax(0,1fr)]">
+            <div className="animate-about-fade-up motion-reduce:animate-none">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#777771]">
+                04 / What We Share
+              </p>
+            </div>
+
+            <div>
+              <h2 className="animate-about-fade-up max-w-3xl text-4xl font-semibold leading-[1.04] tracking-[-0.045em] motion-reduce:animate-none sm:text-5xl">
+                Things worth documenting.
+              </h2>
+
+              <p
+                className="mt-6 max-w-2xl animate-about-fade-up text-[15px] leading-7 text-[#777771] motion-reduce:animate-none"
+                style={{ animationDelay: "80ms" }}
+              >
+                Different parts of the development journey, from technical
+                implementation to the lessons that come from building.
+              </p>
+
+              <div className="mt-12 grid gap-3 sm:grid-cols-2">
+                {journalSections.map((section, index) => (
+                  <article
+                    key={section.number}
+                    className="group animate-about-scale-in rounded-2xl border border-[#deded9] bg-white p-7 transition duration-300 hover:-translate-y-1 hover:shadow-[0_15px_35px_rgba(20,20,20,0.05)] motion-reduce:animate-none"
+                    style={{
+                      animationDelay: `${140 + index * 90}ms`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10px] text-[#999992]">
+                        {section.number}
+                      </span>
+
+                      <span className="text-[#c4c4be] transition duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:text-[#3568e8]">
+                        ↗
+                      </span>
+                    </div>
+
+                    <h3 className="mt-8 text-xl font-semibold tracking-[-0.025em]">
+                      {section.title}
+                    </h3>
+
+                    <p className="mt-3 text-[14px] leading-6 text-[#777771]">
+                      {section.description}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================
+          QUOTE
+      ========================================================= */}
+      <section className="border-b border-[#deded9]">
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8 lg:px-10 lg:py-32">
+          <div className="animate-about-scale-in relative overflow-hidden rounded-3xl border border-[#deded9] bg-white px-7 py-16 transition duration-500 hover:shadow-[0_25px_60px_rgba(20,20,20,0.07)] motion-reduce:animate-none sm:px-12 lg:px-20 lg:py-20">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#dfe8ff]/35 blur-3xl" />
+
+            <div className="relative max-w-4xl">
+              <div className="mb-8 flex items-center gap-3">
+                <span className="h-px w-8 bg-[#3568e8]" />
+
+                <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
+                  Behind the Code
+                </span>
+              </div>
+
+              <blockquote className="text-3xl font-semibold leading-[1.08] tracking-[-0.045em] sm:text-4xl lg:text-5xl">
+                “The finished product shows what was built. The process
+                explains why it was built that way.”
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================
+          FINAL CTA
+      ========================================================= */}
+      <section>
+        <div className="mx-auto max-w-6xl px-6 py-24 sm:px-8 lg:px-10 lg:py-28">
+          <div className="animate-about-scale-in relative overflow-hidden rounded-3xl border border-[#deded9] bg-white p-8 transition duration-500 hover:shadow-[0_25px_60px_rgba(20,20,20,0.07)] motion-reduce:animate-none sm:p-12 lg:p-16">
+            <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 animate-about-glow rounded-full bg-[#dfe8ff]/35 blur-3xl motion-reduce:animate-none" />
+
+            <div className="relative flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
+                <p className="animate-about-fade-up text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3568e8] motion-reduce:animate-none">
+                  Keep Building
+                </p>
+
+                <h2
+                  className="mt-5 animate-about-fade-up text-4xl font-semibold leading-[1.02] tracking-[-0.05em] motion-reduce:animate-none sm:text-5xl lg:text-6xl"
+                  style={{ animationDelay: "80ms" }}
+                >
+                  There is always something behind the code.
+                </h2>
+
+                <p
+                  className="mt-6 max-w-xl animate-about-fade-up text-[15px] leading-7 text-[#777771] motion-reduce:animate-none"
+                  style={{ animationDelay: "160ms" }}
+                >
+                  Explore the articles, follow the ideas, or document something
+                  you have learned along the way.
+                </p>
+              </div>
+
+              <div
+                className="flex shrink-0 animate-about-fade-up flex-wrap gap-3 motion-reduce:animate-none"
+                style={{ animationDelay: "240ms" }}
+              >
+                <Link
+                  href="/articles"
+                  className="inline-flex items-center gap-3 rounded-xl bg-[#171717] px-6 py-3.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#292929] hover:shadow-[0_12px_25px_rgba(20,20,20,0.12)]"
+                >
+                  Explore articles
+                  <span className="transition-transform duration-300 group-hover:translate-x-1">
+                    →
+                  </span>
+                </Link>
+
+                <Link
+                  href={writeArticleHref}
+                  className="inline-flex items-center rounded-xl border border-[#deded9] bg-white px-6 py-3.5 text-sm font-semibold text-[#171717] transition duration-300 hover:-translate-y-0.5 hover:border-[#bdbdb6] hover:shadow-[0_10px_25px_rgba(20,20,20,0.06)]"
+                >
+                  Write an article
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================
+          ABOUT PAGE ANIMATION STYLES
+      ========================================================= */}
+      <style>{`
+        @keyframes about-fade-up {
+          from {
+            opacity: 0;
+            transform: translateY(28px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes about-scale-in {
+          from {
+            opacity: 0;
+            transform: translateY(22px) scale(0.985);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @keyframes about-grid {
+          from {
+            transform: translateY(-10px);
+          }
+
+          to {
+            transform: translateY(10px);
+          }
+        }
+
+        @keyframes about-glow {
+          0%,
+          100% {
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+
+          50% {
+            transform: translate3d(-18px, 12px, 0) scale(1.04);
+          }
+        }
+
+        @keyframes about-pulse {
+          0%,
+          100% {
+            opacity: 0.45;
+            transform: scale(0.85);
+          }
+
+          50% {
+            opacity: 1;
+            transform: scale(1.15);
+          }
+        }
+
+        .animate-about-fade-up {
+          opacity: 0;
+          animation: about-fade-up 700ms
+            cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .animate-about-scale-in {
+          opacity: 0;
+          animation: about-scale-in 750ms
+            cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .animate-about-grid {
+          animation: about-grid 8s ease-in-out infinite alternate;
+        }
+
+        .animate-about-glow {
+          animation: about-glow 9s ease-in-out infinite;
+        }
+
+        .animate-about-pulse {
+          animation: about-pulse 2.4s ease-in-out infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .animate-about-fade-up,
+          .animate-about-scale-in {
+            opacity: 1;
+            animation: none;
+          }
+
+          .animate-about-grid,
+          .animate-about-glow,
+          .animate-about-pulse {
+            animation: none;
+          }
+        }
+      `}</style>
     </main>
   );
 }

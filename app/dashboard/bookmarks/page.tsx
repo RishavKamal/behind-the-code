@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/components/lib/supabase/client";
+import ScrollReveal from "@/components/scroll-reveal";
 
 type BookmarkRow = {
   article_id: string;
@@ -225,8 +226,9 @@ export default function BookmarksPage() {
 
   return (
     <main className="min-h-screen bg-[#f4f4f0] text-[#171717]">
-      <section className="border-b border-[#deded9] bg-[#f8f8f5]">
-        <div className="mx-auto max-w-[1180px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+      <ScrollReveal distance={16}>
+        <section className="border-b border-[#deded9] bg-[#f8f8f5]">
+          <div className="mx-auto max-w-[1180px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#3568e8]">
             Your library
           </p>
@@ -246,18 +248,22 @@ export default function BookmarksPage() {
               {articles.length} {articles.length === 1 ? "article" : "articles"}
             </div>
           </div>
-        </div>
-      </section>
+          </div>
+        </section>
+      </ScrollReveal>
 
       <section className="mx-auto max-w-[1180px] px-5 py-10 sm:px-8 lg:px-10 lg:py-14">
         {error && (
-          <div className="mb-6 rounded-xl border border-[#e4caca] bg-[#fff8f8] px-4 py-3 text-sm text-[#8b4444]">
-            {error}
-          </div>
+          <ScrollReveal distance={12}>
+            <div className="mb-6 rounded-xl border border-[#e4caca] bg-[#fff8f8] px-4 py-3 text-sm text-[#8b4444]">
+              {error}
+            </div>
+          </ScrollReveal>
         )}
 
         {articles.length === 0 ? (
-          <div className="rounded-2xl border border-[#deded9] bg-white px-6 py-16 text-center">
+          <ScrollReveal distance={22}>
+            <div className="rounded-2xl border border-[#deded9] bg-white px-6 py-16 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#deded9] bg-[#f8f8f5]">
               <BookmarkIcon />
             </div>
@@ -277,10 +283,11 @@ export default function BookmarksPage() {
             >
               Browse articles
             </Link>
-          </div>
+            </div>
+          </ScrollReveal>
         ) : (
           <div className="space-y-4">
-            {articles.map((article) => {
+            {articles.map((article, index) => {
               const profile = profileMap.get(article.author_id);
               const authorName =
                 profile?.display_name?.trim() ||
@@ -291,8 +298,12 @@ export default function BookmarksPage() {
                 article.published_at ?? article.created_at;
 
               return (
-                <article
+                <ScrollReveal
                   key={article.id}
+                  delay={Math.min(index * 70, 350)}
+                  distance={18}
+                >
+                  <article
                   className="rounded-2xl border border-[#deded9] bg-white p-5 transition-shadow hover:shadow-[0_12px_30px_rgba(20,20,20,0.04)] sm:p-6"
                 >
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -332,7 +343,8 @@ export default function BookmarksPage() {
                       {removingId === article.id ? "Removing..." : "Remove"}
                     </button>
                   </div>
-                </article>
+                  </article>
+                </ScrollReveal>
               );
             })}
           </div>

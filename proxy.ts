@@ -37,16 +37,36 @@ export async function proxy(request: NextRequest) {
 
   const claims = error ? null : claimsData?.claims;
 
-  const isDashboardRoute =
-    request.nextUrl.pathname.startsWith("/dashboard");
+  const pathname = request.nextUrl.pathname;
 
-  if (isDashboardRoute && !claims) {
+  /*
+   * Pages that require authentication.
+   */
+  const isProtectedRoute =
+    pathname.startsWith("/dashboard") ||
+    pathname === "/profile" ||
+    pathname === "/settings";
+
+  /*
+   * Logged-out users are always sent to login.
+   */
+  if (isProtectedRoute && !claims) {
     const loginUrl = request.nextUrl.clone();
 
     loginUrl.pathname = "/login";
+
+    /*
+     * Remember the page the user originally wanted.
+     *
+     * Example:
+     * /settings
+     *
+     * becomes:
+     * /login?redirectTo=%2Fsettings
+     */
     loginUrl.searchParams.set(
       "redirectTo",
-      request.nextUrl.pathname,
+      pathname + request.nextUrl.search,
     );
 
     return NextResponse.redirect(loginUrl);

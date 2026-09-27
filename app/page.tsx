@@ -173,7 +173,7 @@ export default async function Home() {
 
   const writingHref = user
     ? "/dashboard/articles/new"
-    : "/register";
+    : "/login?redirectTo=/dashboard/articles/new";
 
   return (
     <HomePageAnimations>

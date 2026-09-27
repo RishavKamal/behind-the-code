@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import ArticleLikeButton from "./article-like-button";
 import ArticleBookmarkButton from "./article-bookmark-button";
@@ -8,12 +9,82 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 import { createClient } from "@/components/lib/supabase/server";
+import ScrollReveal from "@/components/scroll-reveal";
 
 type ArticlePageProps = {
   params: Promise<{
     slug: string;
   }>;
 };
+
+const siteUrl = "https://blog.rishavkamal.com";
+
+/* -------------------------------------------------------------------------- */
+/* SEO Metadata                                                               */
+/* -------------------------------------------------------------------------- */
+
+export async function generateMetadata({
+  params,
+}: ArticlePageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  const supabase = await createClient();
+
+  const { data: article } = await supabase
+    .from("articles")
+    .select("title, description, category, slug")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (!article) {
+    return {
+      title: "Article Not Found",
+      description: "The requested article could not be found.",
+    };
+  }
+
+  const title = `${article.title} | Behind the Code`;
+
+  const description =
+    article.description ||
+    `Read ${article.title} on Behind the Code, a developer publishing platform for developers to build, learn, and share.`;
+
+  const canonicalUrl = `${siteUrl}/articles/${article.slug}`;
+
+  return {
+    title,
+    description,
+
+    alternates: {
+      canonical: canonicalUrl,
+    },
+
+    openGraph: {
+      type: "article",
+      url: canonicalUrl,
+      siteName: "Behind the Code",
+      title,
+      description,
+      locale: "en_US",
+    },
+
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
 
 function calculateReadTime(content: string) {
   const wordCount = content.trim()
@@ -32,6 +103,10 @@ function formatDate(dateString: string) {
     year: "numeric",
   }).format(new Date(dateString));
 }
+
+/* -------------------------------------------------------------------------- */
+/* Inline Markdown                                                            */
+/* -------------------------------------------------------------------------- */
 
 type InlinePart =
   | {
@@ -96,10 +171,6 @@ type ContentBlock =
       headers: string[];
       rows: string[][];
     };
-
-/* -------------------------------------------------------------------------- */
-/* Inline Markdown                                                            */
-/* -------------------------------------------------------------------------- */
 
 function renderInline(text: string): InlinePart[] {
   const parts: InlinePart[] = [];
@@ -238,7 +309,7 @@ function InlineMarkdown({ text }: { text: string }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Code                                                                        */
+/* Code                                                                       */
 /* -------------------------------------------------------------------------- */
 
 function normalizeLanguage(language: string) {
@@ -330,7 +401,7 @@ function CodeBlock({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Tables                                                                      */
+/* Tables                                                                     */
 /* -------------------------------------------------------------------------- */
 
 function isTableSeparator(line: string) {
@@ -357,7 +428,7 @@ function splitTableRow(line: string) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Markdown Parser                                                             */
+/* Markdown Parser                                                            */
 /* -------------------------------------------------------------------------- */
 
 function parseMarkdown(content: string): ContentBlock[] {
@@ -417,7 +488,7 @@ function parseMarkdown(content: string): ContentBlock[] {
     const trimmedLine = line.trim();
 
     /* ---------------------------------------------------------------------- */
-    /* Fenced code block                                                       */
+    /* Fenced code block                                                      */
     /* ---------------------------------------------------------------------- */
 
     if (trimmedLine.startsWith("```")) {
@@ -441,7 +512,7 @@ function parseMarkdown(content: string): ContentBlock[] {
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Empty line                                                              */
+    /* Empty line                                                             */
     /* ---------------------------------------------------------------------- */
 
     if (trimmedLine === "") {
@@ -451,7 +522,7 @@ function parseMarkdown(content: string): ContentBlock[] {
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Horizontal rule                                                         */
+    /* Horizontal rule                                                        */
     /* ---------------------------------------------------------------------- */
 
     if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmedLine)) {
@@ -466,7 +537,7 @@ function parseMarkdown(content: string): ContentBlock[] {
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Table                                                                   */
+    /* Table                                                                  */
     /* ---------------------------------------------------------------------- */
 
     if (
@@ -504,7 +575,7 @@ function parseMarkdown(content: string): ContentBlock[] {
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Headings                                                                */
+    /* Headings                                                               */
     /* ---------------------------------------------------------------------- */
 
     if (trimmedLine.startsWith("### ")) {
@@ -547,7 +618,7 @@ function parseMarkdown(content: string): ContentBlock[] {
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Blockquote                                                              */
+    /* Blockquote                                                             */
     /* ---------------------------------------------------------------------- */
 
     if (trimmedLine.startsWith("> ")) {
@@ -563,7 +634,7 @@ function parseMarkdown(content: string): ContentBlock[] {
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Ordered list                                                            */
+    /* Ordered list                                                           */
     /* ---------------------------------------------------------------------- */
 
     const orderedMatch = trimmedLine.match(/^\d+\.\s+(.+)$/);
@@ -582,7 +653,7 @@ function parseMarkdown(content: string): ContentBlock[] {
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Unordered list                                                          */
+    /* Unordered list                                                         */
     /* ---------------------------------------------------------------------- */
 
     const unorderedMatch = trimmedLine.match(/^[-*+]\s+(.+)$/);
@@ -601,7 +672,7 @@ function parseMarkdown(content: string): ContentBlock[] {
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Normal paragraph                                                        */
+    /* Normal paragraph                                                       */
     /* ---------------------------------------------------------------------- */
 
     paragraphLines.push(trimmedLine);
@@ -618,7 +689,7 @@ function parseMarkdown(content: string): ContentBlock[] {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Markdown Block Renderer                                                     */
+/* Markdown Block Renderer                                                    */
 /* -------------------------------------------------------------------------- */
 
 function MarkdownBlock({
@@ -828,57 +899,67 @@ export default async function ArticlePage({
       <header className="border-b border-[#deded9]">
         <div className="mx-auto max-w-4xl px-6 pb-16 pt-14 md:pb-20 md:pt-18">
           {/* Back Navigation */}
-          <Link
-            href="/articles"
-            className="inline-flex items-center gap-2 text-sm text-[#777771] transition-colors hover:text-[#171717]"
-          >
-            <span aria-hidden="true">←</span>
-            <span>Back to articles</span>
-          </Link>
+          <ScrollReveal distance={18}>
+            <Link
+              href="/articles"
+              className="inline-flex items-center gap-2 text-sm text-[#777771] transition-colors hover:text-[#171717]"
+            >
+              <span aria-hidden="true">←</span>
+              <span>Back to articles</span>
+            </Link>
+          </ScrollReveal>
 
           {/* Metadata */}
-          <div className="mt-10 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#777771]">
-            <span>{article.category}</span>
+          <ScrollReveal delay={100} distance={20}>
+            <div className="mt-10 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#777771]">
+              <span>{article.category}</span>
 
-            <span aria-hidden="true">·</span>
+              <span aria-hidden="true">·</span>
 
-            <span>{readTime}</span>
+              <span>{readTime}</span>
 
-            <span aria-hidden="true">·</span>
+              <span aria-hidden="true">·</span>
 
-            <time dateTime={publishedDate}>
-              {formatDate(publishedDate)}
-            </time>
-          </div>
+              <time dateTime={publishedDate}>
+                {formatDate(publishedDate)}
+              </time>
+            </div>
+          </ScrollReveal>
 
           {/* Title */}
-          <h1 className="mt-5 max-w-4xl text-4xl font-bold leading-[0.98] tracking-[-0.05em] text-[#171717] sm:text-5xl md:text-6xl">
-            {article.title}
-          </h1>
+          <ScrollReveal delay={180} distance={24}>
+            <h1 className="mt-5 max-w-4xl text-4xl font-bold leading-[0.98] tracking-[-0.05em] text-[#171717] sm:text-5xl md:text-6xl">
+              {article.title}
+            </h1>
+          </ScrollReveal>
 
           {/* Description */}
           {article.description && (
-            <p className="mt-6 max-w-3xl text-base leading-7 text-[#777771] md:text-lg md:leading-8">
-              {article.description}
-            </p>
+            <ScrollReveal delay={260} distance={22}>
+              <p className="mt-6 max-w-3xl text-base leading-7 text-[#777771] md:text-lg md:leading-8">
+                {article.description}
+              </p>
+            </ScrollReveal>
           )}
 
           {/* Author */}
-          <div className="mt-9 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#171717] text-xs font-semibold tracking-tight text-white">
-              RK
-            </div>
+          <ScrollReveal delay={340} distance={20}>
+            <div className="mt-9 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#171717] text-xs font-semibold tracking-tight text-white">
+                RK
+              </div>
 
-            <div>
-              <p className="text-sm font-medium text-[#333330]">
-                Rishav Kamal
-              </p>
+              <div>
+                <p className="text-sm font-medium text-[#333330]">
+                  Rishav Kamal
+                </p>
 
-              <p className="mt-0.5 text-xs text-[#999992]">
-                Published by Behind the Code
-              </p>
+                <p className="mt-0.5 text-xs text-[#999992]">
+                  Published by Behind the Code
+                </p>
+              </div>
             </div>
-          </div>
+          </ScrollReveal>
         </div>
       </header>
 
@@ -889,11 +970,16 @@ export default async function ArticlePage({
       <article className="mx-auto max-w-3xl px-6 py-14 md:py-20">
         <div className="space-y-8">
           {contentBlocks.map((block, index) => (
-            <MarkdownBlock
+            <ScrollReveal
               key={index}
-              block={block}
-              index={index}
-            />
+              delay={Math.min(index * 35, 280)}
+              distance={20}
+            >
+              <MarkdownBlock
+                block={block}
+                index={index}
+              />
+            </ScrollReveal>
           ))}
         </div>
 
@@ -901,22 +987,24 @@ export default async function ArticlePage({
         {/* Article Footer                                                   */}
         {/* ---------------------------------------------------------------- */}
 
-        <div className="mt-16 border-t border-[#deded9] pt-8 md:mt-20">
-          <div className="flex flex-col gap-7 sm:flex-row sm:items-center sm:justify-between">
-            <Link
-              href="/articles"
-              className="inline-flex items-center gap-2 text-sm font-medium text-[#777771] transition-colors hover:text-[#171717]"
-            >
-              <span aria-hidden="true">←</span>
-              <span>More articles</span>
-            </Link>
+        <ScrollReveal distance={24}>
+          <div className="mt-16 border-t border-[#deded9] pt-8 md:mt-20">
+            <div className="flex flex-col gap-7 sm:flex-row sm:items-center sm:justify-between">
+              <Link
+                href="/articles"
+                className="inline-flex items-center gap-2 text-sm font-medium text-[#777771] transition-colors hover:text-[#171717]"
+              >
+                <span aria-hidden="true">←</span>
+                <span>More articles</span>
+              </Link>
 
-            <div className="flex items-center gap-3">
-              <ArticleLikeButton articleId={article.id} />
-              <ArticleBookmarkButton articleId={article.id} />
+              <div className="flex items-center gap-3">
+                <ArticleLikeButton articleId={article.id} />
+                <ArticleBookmarkButton articleId={article.id} />
+              </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         <ArticleComments articleId={article.id} />
       </article>

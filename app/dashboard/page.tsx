@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { createClient } from "@/components/lib/supabase/client";
+import ScrollReveal from "@/components/scroll-reveal";
 
 type DashboardArticle = {
   id: string;
@@ -49,6 +50,7 @@ function formatViews(value: number) {
 
 export default function DashboardPage() {
   const router = useRouter();
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [articles, setArticles] = useState<DashboardArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +149,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [router]);
 
   const displayName = useMemo(() => {
     return profile?.display_name || "Developer";
@@ -184,6 +186,10 @@ export default function DashboardPage() {
     return articles.slice(0, 5);
   }, [articles]);
 
+  /* ---------------------------------------------------------------------- */
+  /* Loading                                                                */
+  /* ---------------------------------------------------------------------- */
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#f8f8f5] text-[#171717]">
@@ -214,6 +220,10 @@ export default function DashboardPage() {
       </main>
     );
   }
+
+  /* ---------------------------------------------------------------------- */
+  /* Error                                                                  */
+  /* ---------------------------------------------------------------------- */
 
   if (error) {
     return (
@@ -247,9 +257,10 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#f8f8f5] text-[#171717]">
-      {/* =========================================================
-          HERO
-      ========================================================= */}
+      {/* ================================================================== */}
+      {/* HERO                                                               */}
+      {/* ================================================================== */}
+
       <section className="relative overflow-hidden border-b border-[#deded9]">
         {/* Editorial grid */}
         <div
@@ -270,459 +281,484 @@ export default function DashboardPage() {
 
         <div className="relative mx-auto max-w-6xl px-6 pb-16 pt-14 sm:px-8 lg:px-10 lg:pb-20 lg:pt-16">
           {/* Small identity row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#171717] text-[10px] font-bold text-white">
-                BT
+          <ScrollReveal distance={16}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#171717] text-[10px] font-bold text-white">
+                  BT
+                </div>
+
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#3568e8]">
+                    Creator Space
+                  </p>
+
+                  <p className="mt-0.5 text-xs font-medium text-[#555550]">
+                    Dashboard
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#3568e8]">
-                  Creator Space
-                </p>
-
-                <p className="mt-0.5 text-xs font-medium text-[#555550]">
-                  Dashboard
-                </p>
-              </div>
+              <span className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-[#999992] sm:block">
+                Behind the Code
+              </span>
             </div>
-
-            <span className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-[#999992] sm:block">
-              Behind the Code
-            </span>
-          </div>
+          </ScrollReveal>
 
           {/* Main hero */}
-          <div className="mt-16 grid gap-10 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-end">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#777771]">
-                Your workspace
-              </p>
-
-              <h1 className="mt-6 max-w-3xl text-[clamp(3rem,6vw,5.5rem)] font-semibold leading-[0.9] tracking-[-0.065em]">
-                Welcome back,
-                <br />
-                <span className="text-[#3568e8]">{displayName}.</span>
-              </h1>
-
-              <p className="mt-7 max-w-2xl text-sm leading-7 text-[#777771] sm:text-base">
-                Your writing, drafts, and the work you have shared with
-                readers — all in one place.
-              </p>
-            </div>
-
-            {/* Hero actions */}
-            <div className="flex flex-col items-start gap-4 lg:items-end">
-              <Link
-                href="/dashboard/articles/new"
-                className="inline-flex items-center gap-3 rounded-xl bg-[#171717] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_15px_35px_rgba(20,20,20,0.12)] transition hover:bg-[#292929]"
-              >
-                <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/25 text-xs">
-                  +
-                </span>
-
-                Write a new article
-
-                <span aria-hidden="true">→</span>
-              </Link>
-
-              <Link
-                href="/dashboard/articles"
-                className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#777771] transition hover:text-[#3568e8]"
-              >
-                Manage all articles →
-              </Link>
-            </div>
-          </div>
-
-          {/* =====================================================
-              DASHBOARD INDEX
-          ===================================================== */}
-          <div className="mt-16 border-y border-[#deded9]">
-            <div className="grid grid-cols-2 divide-x divide-y divide-[#deded9] sm:grid-cols-4 sm:divide-y-0">
-              {/* Articles */}
-              <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
-                <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
-                  Articles
+          <ScrollReveal delay={120} distance={24}>
+            <div className="mt-16 grid gap-10 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-end">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#777771]">
+                  Your workspace
                 </p>
 
-                <div className="mt-3 flex items-end justify-between gap-4">
-                  <p className="text-3xl font-semibold tracking-[-0.05em]">
-                    {articles.length}
-                  </p>
-
-                  <span className="hidden text-[8px] uppercase tracking-[0.15em] text-[#aaa9a1] sm:block">
-                    Total
+                <h1 className="mt-6 max-w-3xl text-[clamp(3rem,6vw,5.5rem)] font-semibold leading-[0.9] tracking-[-0.065em]">
+                  Welcome back,
+                  <br />
+                  <span className="text-[#3568e8]">
+                    {displayName}.
                   </span>
-                </div>
+                </h1>
+
+                <p className="mt-7 max-w-2xl text-sm leading-7 text-[#777771] sm:text-base">
+                  Your writing, drafts, and the work you have shared with
+                  readers — all in one place.
+                </p>
               </div>
 
-              {/* Published */}
-              <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
-                <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
-                  Published
-                </p>
-
-                <div className="mt-3 flex items-end justify-between gap-4">
-                  <p className="text-3xl font-semibold tracking-[-0.05em]">
-                    {publishedCount}
-                  </p>
-
-                  <span className="hidden text-[8px] uppercase tracking-[0.15em] text-[#aaa9a1] sm:block">
-                    Live
+              {/* Hero actions */}
+              <div className="flex flex-col items-start gap-4 lg:items-end">
+                <Link
+                  href="/dashboard/articles/new"
+                  className="inline-flex items-center gap-3 rounded-xl bg-[#171717] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_15px_35px_rgba(20,20,20,0.12)] transition hover:bg-[#292929]"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/25 text-xs">
+                    +
                   </span>
-                </div>
-              </div>
 
-              {/* Drafts */}
-              <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
-                <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
-                  Drafts
-                </p>
+                  Write a new article
 
-                <div className="mt-3 flex items-end justify-between gap-4">
-                  <p className="text-3xl font-semibold tracking-[-0.05em]">
-                    {draftCount}
-                  </p>
+                  <span aria-hidden="true">→</span>
+                </Link>
 
-                  <span className="hidden text-[8px] uppercase tracking-[0.15em] text-[#aaa9a1] sm:block">
-                    In progress
-                  </span>
-                </div>
-              </div>
-
-              {/* Views */}
-              <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
-                <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
-                  Views
-                </p>
-
-                <div className="mt-3 flex items-end justify-between gap-4">
-                  <p className="text-3xl font-semibold tracking-[-0.05em]">
-                    {formatViews(totalViews)}
-                  </p>
-
-                  <span className="hidden text-[8px] uppercase tracking-[0.15em] text-[#aaa9a1] sm:block">
-                    Total reads
-                  </span>
-                </div>
+                <Link
+                  href="/dashboard/articles"
+                  className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#777771] transition hover:text-[#3568e8]"
+                >
+                  Manage all articles →
+                </Link>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
+
+          {/* ============================================================= */}
+          {/* DASHBOARD INDEX                                                */}
+          {/* ============================================================= */}
+
+          <ScrollReveal delay={220} distance={20}>
+            <div className="mt-16 border-y border-[#deded9]">
+              <div className="grid grid-cols-2 divide-x divide-y divide-[#deded9] sm:grid-cols-4 sm:divide-y-0">
+                {/* Articles */}
+                <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
+                    Articles
+                  </p>
+
+                  <div className="mt-3 flex items-end justify-between gap-4">
+                    <p className="text-3xl font-semibold tracking-[-0.05em]">
+                      {articles.length}
+                    </p>
+
+                    <span className="hidden text-[8px] uppercase tracking-[0.15em] text-[#aaa9a1] sm:block">
+                      Total
+                    </span>
+                  </div>
+                </div>
+
+                {/* Published */}
+                <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
+                    Published
+                  </p>
+
+                  <div className="mt-3 flex items-end justify-between gap-4">
+                    <p className="text-3xl font-semibold tracking-[-0.05em]">
+                      {publishedCount}
+                    </p>
+
+                    <span className="hidden text-[8px] uppercase tracking-[0.15em] text-[#aaa9a1] sm:block">
+                      Live
+                    </span>
+                  </div>
+                </div>
+
+                {/* Drafts */}
+                <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
+                    Drafts
+                  </p>
+
+                  <div className="mt-3 flex items-end justify-between gap-4">
+                    <p className="text-3xl font-semibold tracking-[-0.05em]">
+                      {draftCount}
+                    </p>
+
+                    <span className="hidden text-[8px] uppercase tracking-[0.15em] text-[#aaa9a1] sm:block">
+                      In progress
+                    </span>
+                  </div>
+                </div>
+
+                {/* Views */}
+                <div className="min-w-0 px-5 py-5 sm:px-6 sm:py-6">
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#999992]">
+                    Views
+                  </p>
+
+                  <div className="mt-3 flex items-end justify-between gap-4">
+                    <p className="text-3xl font-semibold tracking-[-0.05em]">
+                      {formatViews(totalViews)}
+                    </p>
+
+                    <span className="hidden text-[8px] uppercase tracking-[0.15em] text-[#aaa9a1] sm:block">
+                      Total reads
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
-      {/* =========================================================
-          RECENT ARTICLES
-      ========================================================= */}
+      {/* ================================================================== */}
+      {/* RECENT ARTICLES                                                    */}
+      {/* ================================================================== */}
+
       <section className="border-b border-[#deded9]">
         <div className="mx-auto max-w-6xl px-6 py-20 sm:px-8 lg:px-10 lg:py-24">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_300px]">
             {/* Articles */}
             <div>
-              <div className="flex items-end justify-between border-b border-[#deded9] pb-6">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3568e8]">
-                    Writing
-                  </p>
+              <ScrollReveal distance={20}>
+                <div className="flex items-end justify-between border-b border-[#deded9] pb-6">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3568e8]">
+                      Writing
+                    </p>
 
-                  <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">
-                    Recent articles.
-                  </h2>
+                    <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">
+                      Recent articles.
+                    </h2>
+                  </div>
+
+                  {articles.length > 0 && (
+                    <Link
+                      href="/dashboard/articles"
+                      className="hidden text-[9px] font-semibold uppercase tracking-[0.16em] text-[#777771] transition hover:text-[#3568e8] sm:block"
+                    >
+                      View all →
+                    </Link>
+                  )}
                 </div>
-
-                {articles.length > 0 && (
-                  <Link
-                    href="/dashboard/articles"
-                    className="hidden text-[9px] font-semibold uppercase tracking-[0.16em] text-[#777771] transition hover:text-[#3568e8] sm:block"
-                  >
-                    View all →
-                  </Link>
-                )}
-              </div>
+              </ScrollReveal>
 
               {recentArticles.length > 0 ? (
                 <div className="divide-y divide-[#deded9]">
                   {recentArticles.map((article, index) => (
-                    <article
+                    <ScrollReveal
                       key={article.id}
-                      className="group py-7"
+                      delay={Math.min(index * 70, 280)}
+                      distance={18}
                     >
-                      <div className="grid gap-4 sm:grid-cols-[42px_minmax(0,1fr)_auto] sm:items-start sm:gap-6">
-                        <span className="font-mono text-[10px] text-[#aaa9a1]">
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.15em]">
-                            <span className="text-[#3568e8]">
-                              {article.category}
-                            </span>
-
-                            <span className="text-[#c7c7c1]">
-                              ·
-                            </span>
-
-                            <span className="text-[#999992]">
-                              {article.status === "published"
-                                ? formatDate(
-                                    article.published_at ??
-                                      article.created_at,
-                                  )
-                                : "Draft"}
-                            </span>
-                          </div>
-
-                          <Link
-                            href={
-                              article.status === "published"
-                                ? `/articles/${article.slug}`
-                                : `/dashboard/articles/${article.id}/edit`
-                            }
-                            className="mt-2 block"
-                          >
-                            <h3 className="text-2xl font-semibold tracking-[-0.04em] transition-colors group-hover:text-[#3568e8]">
-                              {article.title}
-                            </h3>
-
-                            {article.description && (
-                              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#777771]">
-                                {article.description}
-                              </p>
-                            )}
-                          </Link>
-                        </div>
-
-                        <div className="flex items-center gap-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#999992]">
-                          <span>
-                            {formatViews(article.views ?? 0)} views
+                      <article className="group py-7">
+                        <div className="grid gap-4 sm:grid-cols-[42px_minmax(0,1fr)_auto] sm:items-start sm:gap-6">
+                          <span className="font-mono text-[10px] text-[#aaa9a1]">
+                            {String(index + 1).padStart(2, "0")}
                           </span>
 
-                          <Link
-                            href={
-                              article.status === "published"
-                                ? `/articles/${article.slug}`
-                                : `/dashboard/articles/${article.id}/edit`
-                            }
-                            className="text-[#171717] transition hover:text-[#3568e8]"
-                          >
-                            →
-                          </Link>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.15em]">
+                              <span className="text-[#3568e8]">
+                                {article.category}
+                              </span>
+
+                              <span className="text-[#c7c7c1]">
+                                ·
+                              </span>
+
+                              <span className="text-[#999992]">
+                                {article.status === "published"
+                                  ? formatDate(
+                                      article.published_at ??
+                                        article.created_at,
+                                    )
+                                  : "Draft"}
+                              </span>
+                            </div>
+
+                            <Link
+                              href={
+                                article.status === "published"
+                                  ? `/articles/${article.slug}`
+                                  : `/dashboard/articles/${article.id}/edit`
+                              }
+                              className="mt-2 block"
+                            >
+                              <h3 className="text-2xl font-semibold tracking-[-0.04em] transition-colors group-hover:text-[#3568e8]">
+                                {article.title}
+                              </h3>
+
+                              {article.description && (
+                                <p className="mt-2 max-w-2xl text-sm leading-6 text-[#777771]">
+                                  {article.description}
+                                </p>
+                              )}
+                            </Link>
+                          </div>
+
+                          <div className="flex items-center gap-4 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#999992]">
+                            <span>
+                              {formatViews(article.views ?? 0)} views
+                            </span>
+
+                            <Link
+                              href={
+                                article.status === "published"
+                                  ? `/articles/${article.slug}`
+                                  : `/dashboard/articles/${article.id}/edit`
+                              }
+                              className="text-[#171717] transition hover:text-[#3568e8]"
+                            >
+                              →
+                            </Link>
+                          </div>
                         </div>
-                      </div>
-                    </article>
+                      </article>
+                    </ScrollReveal>
                   ))}
                 </div>
               ) : (
-                <div className="flex min-h-[260px] items-center justify-center border-b border-[#deded9] text-center">
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#3568e8]">
-                      Your journal is empty
-                    </p>
+                <ScrollReveal distance={22}>
+                  <div className="flex min-h-[260px] items-center justify-center border-b border-[#deded9] text-center">
+                    <div>
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#3568e8]">
+                        Your journal is empty
+                      </p>
 
-                    <h3 className="mt-4 text-3xl font-semibold tracking-[-0.045em]">
-                      Start with one idea.
-                    </h3>
+                      <h3 className="mt-4 text-3xl font-semibold tracking-[-0.045em]">
+                        Start with one idea.
+                      </h3>
 
-                    <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#777771]">
-                      Write your first article and it will appear here
-                      automatically.
-                    </p>
+                      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#777771]">
+                        Write your first article and it will appear here
+                        automatically.
+                      </p>
 
-                    <Link
-                      href="/dashboard/articles/new"
-                      className="mt-6 inline-flex items-center gap-3 rounded-xl bg-[#171717] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#292929]"
-                    >
-                      Write an article
-                      <span aria-hidden="true">→</span>
-                    </Link>
+                      <Link
+                        href="/dashboard/articles/new"
+                        className="mt-6 inline-flex items-center gap-3 rounded-xl bg-[#171717] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#292929]"
+                      >
+                        Write an article
+                        <span aria-hidden="true">→</span>
+                      </Link>
+                    </div>
                   </div>
-                </div>
+                </ScrollReveal>
               )}
             </div>
 
-            {/* =====================================================
-                QUICK ACTIONS
-            ===================================================== */}
-            <aside>
-              <div className="rounded-3xl border border-[#deded9] bg-white p-6">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#3568e8]">
-                  Quick actions
-                </p>
+            {/* =========================================================== */}
+            {/* QUICK ACTIONS                                                */}
+            {/* =========================================================== */}
 
-                <div className="mt-5 divide-y divide-[#deded9]">
-                  <Link
-                    href="/dashboard/articles/new"
-                    className="group flex items-center justify-between py-5 first:pt-0"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold">
-                        Write an article
-                      </p>
-
-                      <p className="mt-1 text-xs text-[#999992]">
-                        Start something new
-                      </p>
-                    </div>
-
-                    <span className="text-[#aaa9a1] transition-transform group-hover:translate-x-1 group-hover:text-[#3568e8]">
-                      →
-                    </span>
-                  </Link>
-
-                  <Link
-                    href="/dashboard/articles"
-                    className="group flex items-center justify-between py-5"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold">
-                        Manage articles
-                      </p>
-
-                      <p className="mt-1 text-xs text-[#999992]">
-                        Edit and organize your writing
-                      </p>
-                    </div>
-
-                    <span className="text-[#aaa9a1] transition-transform group-hover:translate-x-1 group-hover:text-[#3568e8]">
-                      →
-                    </span>
-                  </Link>
-
-                  <Link
-                    href="/articles"
-                    className="group flex items-center justify-between py-5"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold">
-                        View public site
-                      </p>
-
-                      <p className="mt-1 text-xs text-[#999992]">
-                        See what readers see
-                      </p>
-                    </div>
-
-                    <span className="text-[#aaa9a1] transition-transform group-hover:translate-x-1 group-hover:text-[#3568e8]">
-                      →
-                    </span>
-                  </Link>
-
-                  <Link
-                    href="/profile"
-                    className="group flex items-center justify-between py-5 last:pb-0"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold">
-                        View profile
-                      </p>
-
-                      <p className="mt-1 text-xs text-[#999992]">
-                        See your public profile
-                      </p>
-                    </div>
-
-                    <span className="text-[#aaa9a1] transition-transform group-hover:translate-x-1 group-hover:text-[#3568e8]">
-                      →
-                    </span>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Small journal index */}
-              <div className="mt-5 border-y border-[#deded9] py-5">
-                <div className="flex items-center justify-between">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
-                    Journal index
+            <ScrollReveal delay={120} distance={22}>
+              <aside>
+                <div className="rounded-3xl border border-[#deded9] bg-white p-6">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#3568e8]">
+                    Quick actions
                   </p>
 
-                  <span className="font-mono text-[9px] text-[#aaa9a1]">
-                    2026
-                  </span>
+                  <div className="mt-5 divide-y divide-[#deded9]">
+                    <Link
+                      href="/dashboard/articles/new"
+                      className="group flex items-center justify-between py-5 first:pt-0"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">
+                          Write an article
+                        </p>
+
+                        <p className="mt-1 text-xs text-[#999992]">
+                          Start something new
+                        </p>
+                      </div>
+
+                      <span className="text-[#aaa9a1] transition-transform group-hover:translate-x-1 group-hover:text-[#3568e8]">
+                        →
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/dashboard/articles"
+                      className="group flex items-center justify-between py-5"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">
+                          Manage articles
+                        </p>
+
+                        <p className="mt-1 text-xs text-[#999992]">
+                          Edit and organize your writing
+                        </p>
+                      </div>
+
+                      <span className="text-[#aaa9a1] transition-transform group-hover:translate-x-1 group-hover:text-[#3568e8]">
+                        →
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/articles"
+                      className="group flex items-center justify-between py-5"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">
+                          View public site
+                        </p>
+
+                        <p className="mt-1 text-xs text-[#999992]">
+                          See what readers see
+                        </p>
+                      </div>
+
+                      <span className="text-[#aaa9a1] transition-transform group-hover:translate-x-1 group-hover:text-[#3568e8]">
+                        →
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/profile"
+                      className="group flex items-center justify-between py-5 last:pb-0"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">
+                          View profile
+                        </p>
+
+                        <p className="mt-1 text-xs text-[#999992]">
+                          See your public profile
+                        </p>
+                      </div>
+
+                      <span className="text-[#aaa9a1] transition-transform group-hover:translate-x-1 group-hover:text-[#3568e8]">
+                        →
+                      </span>
+                    </Link>
+                  </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-y-3 text-[9px] font-semibold uppercase tracking-[0.14em]">
-                  <span className="text-[#3568e8]">
-                    {articles.length} articles
-                  </span>
+                {/* Small journal index */}
+                <ScrollReveal delay={180} distance={18}>
+                  <div className="mt-5 border-y border-[#deded9] py-5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
+                        Journal index
+                      </p>
 
-                  <span className="text-right text-[#777771]">
-                    {categoryCount} topics
-                  </span>
+                      <span className="font-mono text-[9px] text-[#aaa9a1]">
+                        2026
+                      </span>
+                    </div>
 
-                  <span className="text-[#777771]">
-                    {draftCount} drafts
-                  </span>
+                    <div className="mt-4 grid grid-cols-2 gap-y-3 text-[9px] font-semibold uppercase tracking-[0.14em]">
+                      <span className="text-[#3568e8]">
+                        {articles.length} articles
+                      </span>
 
-                  <span className="text-right text-[#777771]">
-                    {formatViews(totalViews)} reads
-                  </span>
-                </div>
-              </div>
-            </aside>
+                      <span className="text-right text-[#777771]">
+                        {categoryCount} topics
+                      </span>
+
+                      <span className="text-[#777771]">
+                        {draftCount} drafts
+                      </span>
+
+                      <span className="text-right text-[#777771]">
+                        {formatViews(totalViews)} reads
+                      </span>
+                    </div>
+                  </div>
+                </ScrollReveal>
+              </aside>
+            </ScrollReveal>
           </div>
         </div>
       </section>
 
-      {/* =========================================================
-          FINAL STRIP
-      ========================================================= */}
+      {/* ================================================================== */}
+      {/* FINAL STRIP                                                        */}
+      {/* ================================================================== */}
+
       <section>
-        <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8 lg:px-10">
-          <div className="grid grid-cols-2 divide-x divide-[#deded9] border-y border-[#deded9] sm:grid-cols-4">
-            <Link
-              href="/dashboard/articles/new"
-              className="group px-4 py-5 transition hover:bg-white sm:px-6"
-            >
-              <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
-                Create
-              </p>
+        <ScrollReveal distance={20}>
+          <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8 lg:px-10">
+            <div className="grid grid-cols-2 divide-x divide-[#deded9] border-y border-[#deded9] sm:grid-cols-4">
+              <Link
+                href="/dashboard/articles/new"
+                className="group px-4 py-5 transition hover:bg-white sm:px-6"
+              >
+                <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
+                  Create
+                </p>
 
-              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors group-hover:text-[#3568e8]">
-                New article →
-              </p>
-            </Link>
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors group-hover:text-[#3568e8]">
+                  New article →
+                </p>
+              </Link>
 
-            <Link
-              href="/dashboard/articles"
-              className="group px-4 py-5 transition hover:bg-white sm:px-6"
-            >
-              <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
-                Manage
-              </p>
+              <Link
+                href="/dashboard/articles"
+                className="group px-4 py-5 transition hover:bg-white sm:px-6"
+              >
+                <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
+                  Manage
+                </p>
 
-              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors group-hover:text-[#3568e8]">
-                Your articles →
-              </p>
-            </Link>
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors group-hover:text-[#3568e8]">
+                  Your articles →
+                </p>
+              </Link>
 
-            <Link
-              href="/topics"
-              className="group px-4 py-5 transition hover:bg-white sm:px-6"
-            >
-              <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
-                Explore
-              </p>
+              <Link
+                href="/topics"
+                className="group px-4 py-5 transition hover:bg-white sm:px-6"
+              >
+                <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
+                  Explore
+                </p>
 
-              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors group-hover:text-[#3568e8]">
-                Browse topics →
-              </p>
-            </Link>
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors group-hover:text-[#3568e8]">
+                  Browse topics →
+                </p>
+              </Link>
 
-            <Link
-              href="/profile"
-              className="group px-4 py-5 transition hover:bg-white sm:px-6"
-            >
-              <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
-                Identity
-              </p>
+              <Link
+                href="/profile"
+                className="group px-4 py-5 transition hover:bg-white sm:px-6"
+              >
+                <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
+                  Identity
+                </p>
 
-              <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors group-hover:text-[#3568e8]">
-                Your profile →
-              </p>
-            </Link>
+                <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.13em] transition-colors group-hover:text-[#3568e8]">
+                  Your profile →
+                </p>
+              </Link>
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
     </main>
   );

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createClient } from "@/components/lib/supabase/client";
+import ScrollReveal from "@/components/scroll-reveal";
 
 const categories = [
   "Web Development",
@@ -628,7 +629,8 @@ function EditArticleForm({
   return (
     <main className="min-h-screen">
       {/* Header */}
-      <section className="border-b border-[#deded9]">
+      <ScrollReveal distance={14}>
+        <section className="border-b border-[#deded9]">
         <div className="mx-auto max-w-7xl px-6 py-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -680,7 +682,8 @@ function EditArticleForm({
             </div>
           )}
         </div>
-      </section>
+        </section>
+      </ScrollReveal>
 
       {/* Editor */}
       <section>
@@ -689,7 +692,8 @@ function EditArticleForm({
             {/* Main */}
             <div className="min-w-0">
               {/* Title */}
-              <div>
+              <ScrollReveal distance={18}>
+                <div>
                 <label
                   htmlFor="article-title"
                   className="mb-2 block text-[11px] font-medium uppercase tracking-[0.15em] text-[#777771]"
@@ -706,10 +710,12 @@ function EditArticleForm({
                   }
                   className="w-full border-0 border-b border-[#deded9] bg-transparent px-0 py-3 text-4xl font-bold tracking-[-0.045em] text-[#171717] outline-none placeholder:text-[#c4c4bd] focus:border-[#999992] md:text-5xl"
                 />
-              </div>
+                </div>
+              </ScrollReveal>
 
               {/* Description */}
-              <div className="mt-7">
+              <ScrollReveal delay={80} distance={18}>
+                <div className="mt-7">
                 <label
                   htmlFor="article-description"
                   className="mb-2 block text-[11px] font-medium uppercase tracking-[0.15em] text-[#777771]"
@@ -726,10 +732,12 @@ function EditArticleForm({
                   rows={3}
                   className="w-full resize-none rounded-lg border border-[#deded9] bg-white px-4 py-3 text-sm leading-6 text-[#171717] outline-none placeholder:text-[#aaa9a3] transition-colors focus:border-[#999992]"
                 />
-              </div>
+                </div>
+              </ScrollReveal>
 
               {/* Editor */}
-              <div className="mt-8 overflow-hidden rounded-xl border border-[#deded9] bg-white">
+              <ScrollReveal delay={150} distance={22}>
+                <div className="mt-8 overflow-hidden rounded-xl border border-[#deded9] bg-white">
                 {/* Mode */}
                 <div className="flex items-center justify-between border-b border-[#deded9] bg-[#fafaf8] px-4 py-3">
                   <div
@@ -851,12 +859,14 @@ function EditArticleForm({
                     <MarkdownPreview content={content} />
                   </div>
                 )}
-              </div>
+                </div>
+              </ScrollReveal>
             </div>
 
             {/* Sidebar */}
             <aside className="lg:sticky lg:top-24 lg:self-start">
-              <div className="rounded-xl border border-[#deded9] bg-white">
+              <ScrollReveal delay={120} distance={18}>
+                <div className="rounded-xl border border-[#deded9] bg-white">
                 {/* Publishing */}
                 <div className="p-5">
                   <p className="text-xs font-medium uppercase tracking-[0.15em] text-[#777771]">
@@ -998,14 +1008,17 @@ function EditArticleForm({
                     Permanently delete this article.
                   </p>
                 </div>
-              </div>
+                </div>
+              </ScrollReveal>
 
-              <Link
-                href="/dashboard/articles"
+              <ScrollReveal delay={240} distance={14}>
+                <Link
+                  href="/dashboard/articles"
                 className="mt-5 block text-center text-sm text-[#777771] transition-colors hover:text-[#171717]"
               >
-                ← Back to my articles
-              </Link>
+                  ← Back to my articles
+                </Link>
+              </ScrollReveal>
             </aside>
           </div>
         </div>

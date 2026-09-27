@@ -616,7 +616,7 @@ export default function MyArticlesPage() {
                           </Link>
                         ) : (
                           <Link
-                            href={`/dashboard/articles/${article.id}/edit`}
+                            href={`/dashboard/articles/${article.slug}/edit`}
                             className="inline-flex items-center gap-2 rounded-lg bg-[#171717] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#292929]"
                           >
                             Continue
@@ -625,7 +625,7 @@ export default function MyArticlesPage() {
                         )}
 
                         <Link
-                          href={`/dashboard/articles/${article.id}/edit`}
+                          href={`/dashboard/articles/${article.slug}/edit`}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#deded9] bg-white text-[#777771] transition hover:border-[#aaa9a1] hover:text-[#171717]"
                           aria-label={`Edit ${article.title}`}
                         >

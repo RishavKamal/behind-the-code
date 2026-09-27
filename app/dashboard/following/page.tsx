@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/components/lib/supabase/client";
+import ScrollReveal from "@/components/scroll-reveal";
 
 type FollowRow = {
   following_id: string;
@@ -193,8 +194,9 @@ export default function FollowingPage() {
 
   return (
     <main className="min-h-screen bg-[#f4f4f0] text-[#171717]">
-      <section className="border-b border-[#deded9] bg-[#f8f8f5]">
-        <div className="mx-auto max-w-[1180px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+      <ScrollReveal distance={16}>
+        <section className="border-b border-[#deded9] bg-[#f8f8f5]">
+          <div className="mx-auto max-w-[1180px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#3568e8]">
             Your network
           </p>
@@ -214,18 +216,22 @@ export default function FollowingPage() {
               {following.length} {following.length === 1 ? "developer" : "developers"}
             </div>
           </div>
-        </div>
-      </section>
+          </div>
+        </section>
+      </ScrollReveal>
 
       <section className="mx-auto max-w-[1180px] px-5 py-10 sm:px-8 lg:px-10 lg:py-14">
         {error && (
-          <div className="mb-6 rounded-xl border border-[#e4caca] bg-[#fff8f8] px-4 py-3 text-sm text-[#8b4444]">
-            {error}
-          </div>
+          <ScrollReveal distance={12}>
+            <div className="mb-6 rounded-xl border border-[#e4caca] bg-[#fff8f8] px-4 py-3 text-sm text-[#8b4444]">
+              {error}
+            </div>
+          </ScrollReveal>
         )}
 
         {following.length === 0 ? (
-          <div className="rounded-2xl border border-[#deded9] bg-white px-6 py-16 text-center">
+          <ScrollReveal distance={22}>
+            <div className="rounded-2xl border border-[#deded9] bg-white px-6 py-16 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#deded9] bg-[#f8f8f5]">
               <UsersIcon />
             </div>
@@ -244,10 +250,11 @@ export default function FollowingPage() {
             >
               Discover developers
             </Link>
-          </div>
+            </div>
+          </ScrollReveal>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {following.map((row) => {
+            {following.map((row, index) => {
               const profile = profileMap.get(row.following_id);
 
               if (!profile) {
@@ -265,8 +272,12 @@ export default function FollowingPage() {
                 : "/profile";
 
               return (
-                <article
+                <ScrollReveal
                   key={profile.id}
+                  delay={Math.min(index * 70, 350)}
+                  distance={18}
+                >
+                  <article
                   className="rounded-2xl border border-[#deded9] bg-white p-6 transition-shadow hover:shadow-[0_12px_30px_rgba(20,20,20,0.04)]"
                 >
                   <div className="flex items-start gap-4">
@@ -326,7 +337,8 @@ export default function FollowingPage() {
                       </button>
                     </div>
                   </div>
-                </article>
+                  </article>
+                </ScrollReveal>
               );
             })}
           </div>

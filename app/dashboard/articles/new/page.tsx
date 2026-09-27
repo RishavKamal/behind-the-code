@@ -20,6 +20,7 @@ import { go } from "@codemirror/lang-go";
 import { markdown } from "@codemirror/lang-markdown";
 
 import { createClient } from "@/components/lib/supabase/client";
+import ScrollReveal from "@/components/scroll-reveal";
 
 type EditorMode = "write" | "preview";
 type ArticleStatus = "draft" | "published";
@@ -1453,7 +1454,8 @@ export default function NewArticlePage() {
   return (
     <div className="min-h-screen bg-[#f4f4f0] text-[#171717]">
       {/* Page intro / actions */}
-      <div className="border-b border-[#d9d9d2] bg-[#f8f8f5]">
+      <ScrollReveal distance={14}>
+        <div className="border-b border-[#d9d9d2] bg-[#f8f8f5]">
         <div className="mx-auto max-w-[1500px] px-5 py-5 sm:px-8 lg:px-10">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -1491,21 +1493,25 @@ export default function NewArticlePage() {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </ScrollReveal>
 
       <main className="mx-auto max-w-[1500px] px-5 py-7 sm:px-8 lg:px-10 lg:py-10">
         {error && (
-          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
+          <ScrollReveal distance={12}>
+            <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
             <span className="mt-0.5 font-bold">!</span>
             <span>{error}</span>
-          </div>
+            </div>
+          </ScrollReveal>
         )}
 
         <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1fr)_330px]">
           {/* Main writing column */}
           <section className="min-w-0">
             {/* Article identity */}
-            <div className="relative overflow-hidden rounded-[26px] border border-[#d9d9d2] bg-white shadow-[0_16px_50px_rgba(30,30,20,0.05)]">
+            <ScrollReveal distance={22}>
+              <div className="relative overflow-hidden rounded-[26px] border border-[#d9d9d2] bg-white shadow-[0_16px_50px_rgba(30,30,20,0.05)]">
               <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-[#dce6ff] opacity-50 blur-3xl" />
 
               <div className="relative px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-9">
@@ -1583,10 +1589,12 @@ export default function NewArticlePage() {
                   </div>
                 </div>
               </div>
-            </div>
+              </div>
+            </ScrollReveal>
 
             {/* Writing editor */}
-            <div className="mt-7 overflow-hidden rounded-[26px] border border-[#d9d9d2] bg-white shadow-[0_16px_50px_rgba(30,30,20,0.05)]">
+            <ScrollReveal delay={120} distance={22}>
+              <div className="mt-7 overflow-hidden rounded-[26px] border border-[#d9d9d2] bg-white shadow-[0_16px_50px_rgba(30,30,20,0.05)]">
               <div className="flex flex-col border-b border-[#e0e0da] sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex px-3 pt-2 sm:px-4">
                   <button
@@ -1703,13 +1711,15 @@ export default function NewArticlePage() {
                   <MarkdownPreview content={content} />
                 </div>
               )}
-            </div>
+              </div>
+            </ScrollReveal>
           </section>
 
           {/* Publishing / metadata rail */}
           <aside className="space-y-4 xl:sticky xl:top-6">
             {/* Category */}
-            <div className="rounded-[24px] border border-[#d9d9d2] bg-white p-5 shadow-[0_12px_35px_rgba(30,30,20,0.04)]">
+            <ScrollReveal delay={80} distance={18}>
+              <div className="rounded-[24px] border border-[#d9d9d2] bg-white p-5 shadow-[0_12px_35px_rgba(30,30,20,0.04)]">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#3568e8]">
@@ -1799,10 +1809,12 @@ export default function NewArticlePage() {
                   ))}
                 </div>
               )}
-            </div>
+              </div>
+            </ScrollReveal>
 
             {/* Checklist */}
-            <div className="rounded-[24px] border border-[#d9d9d2] bg-white p-5 shadow-[0_12px_35px_rgba(30,30,20,0.04)]">
+            <ScrollReveal delay={220} distance={18}>
+              <div className="rounded-[24px] border border-[#d9d9d2] bg-white p-5 shadow-[0_12px_35px_rgba(30,30,20,0.04)]">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-[#171717]">
                   Publishing checklist
@@ -1843,10 +1855,12 @@ export default function NewArticlePage() {
                   </div>
                 ))}
               </div>
-            </div>
+              </div>
+            </ScrollReveal>
 
             {/* Shortcuts */}
-            <div className="rounded-[24px] border border-[#d9d9d2] bg-[#fafaf8] p-5">
+            <ScrollReveal delay={290} distance={18}>
+              <div className="rounded-[24px] border border-[#d9d9d2] bg-[#fafaf8] p-5">
               <h2 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#777770]">
                 Shortcuts
               </h2>
@@ -1869,8 +1883,11 @@ export default function NewArticlePage() {
                   <span>Code</span>
                 </div>
               </div>
-            </div>
-            <div className="rounded-[24px] border border-[#d9d9d2] bg-[#171717] p-5 text-white shadow-[0_16px_50px_rgba(20,20,20,0.12)]">
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal delay={360} distance={18}>
+              <div className="rounded-[24px] border border-[#d9d9d2] bg-[#171717] p-5 text-white shadow-[0_16px_50px_rgba(20,20,20,0.12)]">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#8eaafc]">
@@ -1905,7 +1922,8 @@ export default function NewArticlePage() {
                   {saving && status === "published" ? "Publishing..." : "Publish"}
                 </button>
               </div>
-            </div>
+              </div>
+            </ScrollReveal>
 
           </aside>
         </div>

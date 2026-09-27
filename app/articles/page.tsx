@@ -859,7 +859,11 @@ function ArticlesPageContent() {
             </div>
 
             <Link
-              href={isLoggedIn ? "/dashboard/articles/new" : "/register"}
+              href={
+                isLoggedIn
+                  ? "/dashboard/articles/new"
+                  : "/login?redirectTo=/dashboard/articles/new"
+              }
               className="group inline-flex w-fit items-center gap-3 rounded-xl bg-white px-5 py-3.5 text-sm font-bold text-[#151515] transition-all hover:-translate-y-0.5 hover:bg-[#eeeeeb]"
             >
               Start writing

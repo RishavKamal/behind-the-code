@@ -21,6 +21,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     const normalizedUsername = username.trim().toLowerCase();
 
@@ -66,7 +67,21 @@ export default function RegisterPage() {
     };
   }, [username]);
 
+  function getSafeRedirect() {
+    const redirectTo = new URLSearchParams(
+      window.location.search,
+    ).get("redirectTo");
 
+    if (
+      redirectTo &&
+      redirectTo.startsWith("/") &&
+      !redirectTo.startsWith("//")
+    ) {
+      return redirectTo;
+    }
+
+    return "/dashboard";
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,6 +125,14 @@ export default function RegisterPage() {
     setLoading(true);
 
     const supabase = createClient();
+    const redirectTo = getSafeRedirect();
+
+    const callbackUrl = new URL(
+      "/auth/callback",
+      window.location.origin,
+    );
+
+    callbackUrl.searchParams.set("next", redirectTo);
 
     const { error: signUpError } = await supabase.auth.signUp({
       email,
@@ -119,7 +142,7 @@ export default function RegisterPage() {
           full_name: name,
           username: normalizedUsername,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: callbackUrl.toString(),
       },
     });
 
@@ -134,6 +157,10 @@ export default function RegisterPage() {
       "Account created. Check your email to confirm your account.",
     );
   }
+
+  const loginHref = `/login?redirectTo=${encodeURIComponent(
+    getSafeRedirect(),
+  )}`;
 
   return (
     <main className="overflow-hidden">
@@ -450,7 +477,7 @@ export default function RegisterPage() {
                   </p>
 
                   <Link
-                    href="/login"
+                    href={loginHref}
                     className="mt-0.5 inline-block text-sm font-medium text-[#171717] underline decoration-[#c7c7c1] underline-offset-4 transition-colors hover:decoration-[#171717]"
                   >
                     Sign in →

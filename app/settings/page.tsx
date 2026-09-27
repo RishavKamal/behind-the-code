@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import ScrollReveal from "@/components/scroll-reveal";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/components/lib/supabase/client";
@@ -825,7 +826,8 @@ export default function SettingsPage() {
     return (
       <main className="min-h-[calc(100vh-65px)] bg-[#f8f8f5]">
         <div className="mx-auto max-w-4xl px-6 py-16">
-          <div className="rounded-2xl border border-[#deded9] bg-white p-6">
+          <ScrollReveal distance={12}>
+            <div className="rounded-2xl border border-[#deded9] bg-white p-6">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#3568e8]">
               Account
             </p>
@@ -835,7 +837,8 @@ export default function SettingsPage() {
             <p className="mt-2 text-sm leading-6 text-[#777771]">
               {profileError || "Something went wrong while loading your profile."}
             </p>
-          </div>
+            </div>
+          </ScrollReveal>
         </div>
       </main>
     );
@@ -853,8 +856,9 @@ export default function SettingsPage() {
   return (
     <main className="min-h-[calc(100vh-65px)] bg-[#f8f8f5]">
       <div className="mx-auto max-w-6xl px-6 py-10 md:px-8 md:py-14">
-        {/* Header */}
-        <header className="border-b border-[#deded9] pb-9">
+        <ScrollReveal distance={14}>
+          {/* Header */}
+          <header className="border-b border-[#deded9] pb-9">
           <button
             type="button"
             onClick={() => router.back()}
@@ -891,7 +895,8 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-        </header>
+          </header>
+        </ScrollReveal>
 
         <div className="grid gap-10 pt-10 lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-14">
           {/* Settings navigation */}
@@ -950,8 +955,9 @@ export default function SettingsPage() {
 
           <div className="min-w-0 space-y-8">
             {/* Public profile */}
-            <section
-              id="profile"
+            <ScrollReveal distance={18}>
+              <section
+                id="profile"
               className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#deded9] bg-white"
             >
               <div className="border-b border-[#e8e8e3] px-6 py-6 md:px-8">
@@ -1168,11 +1174,13 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </form>
-            </section>
+              </section>
+            </ScrollReveal>
 
             {/* Email */}
-            <section
-              id="email"
+            <ScrollReveal distance={18}>
+              <section
+                id="email"
               className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#deded9] bg-white"
             >
               <div className="border-b border-[#e8e8e3] px-6 py-6 md:px-8">
@@ -1226,11 +1234,13 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </form>
-            </section>
+              </section>
+            </ScrollReveal>
 
             {/* Password */}
-            <section
-              id="password"
+            <ScrollReveal distance={18}>
+              <section
+                id="password"
               className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#deded9] bg-white"
             >
               <div className="border-b border-[#e8e8e3] px-6 py-6 md:px-8">
@@ -1310,11 +1320,13 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </form>
-            </section>
+              </section>
+            </ScrollReveal>
 
             {/* Account control */}
-            <section
-              id="account-control"
+            <ScrollReveal distance={18}>
+              <section
+                id="account-control"
               className="scroll-mt-24 overflow-hidden rounded-2xl border border-[#deded9] bg-white"
             >
               <div className="border-b border-[#e8e8e3] px-6 py-6 md:px-8">
@@ -1375,7 +1387,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-            </section>
+              </section>
+            </ScrollReveal>
           </div>
         </div>
       </div>
@@ -1393,7 +1406,8 @@ export default function SettingsPage() {
             }
           }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-[#deded9] bg-white p-6 shadow-[0_24px_70px_rgba(0,0,0,0.18)] md:p-7">
+          <ScrollReveal distance={12}>
+            <div className="w-full max-w-md rounded-2xl border border-[#deded9] bg-white p-6 shadow-[0_24px_70px_rgba(0,0,0,0.18)] md:p-7">
             <p className="text-[9px] font-bold uppercase tracking-[0.17em] text-[#777771]">
               Profile picture
             </p>
@@ -1429,7 +1443,8 @@ export default function SettingsPage() {
                 {deletingAvatar ? "Removing..." : "Remove picture"}
               </button>
             </div>
-          </div>
+            </div>
+          </ScrollReveal>
         </div>
       )}
 
@@ -1441,7 +1456,8 @@ export default function SettingsPage() {
           aria-modal="true"
           aria-labelledby="delete-account-title"
         >
-          <div className="w-full max-w-md rounded-2xl border border-[#deded9] bg-white p-6 shadow-[0_24px_70px_rgba(0,0,0,0.18)] md:p-7">
+          <ScrollReveal distance={12}>
+            <div className="w-full max-w-md rounded-2xl border border-[#deded9] bg-white p-6 shadow-[0_24px_70px_rgba(0,0,0,0.18)] md:p-7">
             <p className="text-[9px] font-bold uppercase tracking-[0.17em] text-[#9a4d4d]">
               Permanent action
             </p>
@@ -1505,7 +1521,8 @@ export default function SettingsPage() {
                 {deletingAccount ? "Deleting account..." : "Delete account"}
               </button>
             </div>
-          </div>
+            </div>
+          </ScrollReveal>
         </div>
       )}
     </main>
