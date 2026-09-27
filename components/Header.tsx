@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 
 import { createClient } from "@/components/lib/supabase/client";
 
@@ -33,7 +34,7 @@ export default function Header() {
   /*
    * Load the profile stored in public.profiles.
    *
-   * This is the source of truth for:
+   * Source of truth:
    * - display_name
    * - username
    * - avatar_url
@@ -96,7 +97,7 @@ export default function Header() {
 
       /*
        * First use auth metadata as a temporary fallback.
-       * The profiles table will then overwrite it when available.
+       * The profiles table overwrites it when available.
        */
       const metadata = user.user_metadata;
 
@@ -117,42 +118,37 @@ export default function Header() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        const user = session?.user;
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user;
 
-        if (!user) {
-          setIsLoggedIn(false);
-          setUserId("");
-          setUserEmail("");
-          setUserName("");
-          setAvatarUrl("");
-          setCheckingAuth(false);
-          return;
-        }
-
-        setIsLoggedIn(true);
-        setUserId(user.id);
-        setUserEmail(user.email ?? "");
-
-        const metadata = user.user_metadata;
-
-        const metadataName =
-          metadata?.full_name ||
-          metadata?.name ||
-          metadata?.display_name ||
-          "";
-
-        setUserName(metadataName);
-
-        /*
-         * Load the actual profile data.
-         */
-        void loadProfile(user.id);
-
+      if (!user) {
+        setIsLoggedIn(false);
+        setUserId("");
+        setUserEmail("");
+        setUserName("");
+        setAvatarUrl("");
         setCheckingAuth(false);
-      },
-    );
+        return;
+      }
+
+      setIsLoggedIn(true);
+      setUserId(user.id);
+      setUserEmail(user.email ?? "");
+
+      const metadata = user.user_metadata;
+
+      const metadataName =
+        metadata?.full_name ||
+        metadata?.name ||
+        metadata?.display_name ||
+        "";
+
+      setUserName(metadataName);
+
+      void loadProfile(user.id);
+
+      setCheckingAuth(false);
+    });
 
     return () => {
       subscription.unsubscribe();
@@ -161,10 +157,6 @@ export default function Header() {
 
   /*
    * Reload the profile when navigating between pages.
-   *
-   * This matters because Header is part of the persistent AppShell.
-   * If the user changes their avatar in Settings and then navigates
-   * to another page, the Header should pick up the new avatar.
    */
   useEffect(() => {
     if (userId && isLoggedIn) {
@@ -194,6 +186,14 @@ export default function Header() {
     };
   }, [profileOpen]);
 
+  /*
+   * Close mobile menu when navigating.
+   */
+  useEffect(() => {
+    setMenuOpen(false);
+    setProfileOpen(false);
+  }, [pathname]);
+
   const isActive = (href: string) => {
     if (href === "/") {
       return pathname === "/";
@@ -214,7 +214,8 @@ export default function Header() {
 
       if (parts.length >= 2) {
         return (
-          parts[0][0] + parts[parts.length - 1][0]
+          parts[0][0] +
+          parts[parts.length - 1][0]
         ).toUpperCase();
       }
 
@@ -229,18 +230,20 @@ export default function Header() {
   };
 
   const displayName =
-    userName || userEmail.split("@")[0] || "Account";
+    userName ||
+    userEmail.split("@")[0] ||
+    "Account";
 
   async function handleSignOut() {
     setProfileOpen(false);
     setMenuOpen(false);
 
     /*
-     * Remember exactly where the user is before signing out.
-     * This lets them remain on the same page after logout.
+     * Remember the current page before signing out.
      */
     const currentPath =
-      window.location.pathname + window.location.search;
+      window.location.pathname +
+      window.location.search;
 
     const supabase = createClient();
 
@@ -254,10 +257,6 @@ export default function Header() {
 
     /*
      * Full browser navigation back to the same page.
-     *
-     * Public pages remain open after logout.
-     * Protected pages are handled by the proxy and will
-     * redirect the logged-out user to /login.
      */
     window.location.href = currentPath;
   }
@@ -270,6 +269,7 @@ export default function Header() {
             opacity: 0;
             transform: translateY(-6px) scale(0.98);
           }
+
           to {
             opacity: 1;
             transform: translateY(0) scale(1);
@@ -281,7 +281,17 @@ export default function Header() {
           animation: profileDropdownIn 160ms ease-out;
         }
       `}</style>
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+
+      {/*
+       * Header content
+       *
+       * Desktop:
+       * - 1088px content grid
+       *
+       * Mobile:
+       * - 20px horizontal spacing
+       */}
+      <div className="mx-auto flex h-[70px] w-full max-w-[1088px] items-center justify-between px-5 md:px-0">
         {/* Logo */}
         <Link
           href="/"
@@ -334,7 +344,7 @@ export default function Header() {
                     type="button"
                     onClick={() =>
                       setProfileOpen(
-                        (current) => !current,
+                        (current) => !current
                       )
                     }
                     aria-haspopup="menu"
@@ -503,7 +513,7 @@ export default function Header() {
       {/* Mobile Navigation */}
       {menuOpen && (
         <div className="border-t border-[#deded9] bg-[#fafaf8] md:hidden">
-          <nav className="mx-auto max-w-6xl px-6 py-4">
+          <nav className="mx-auto w-full max-w-[1088px] px-5 py-4">
             <div className="space-y-1">
               {navigation.map((item) => {
                 const active = isActive(item.href);
@@ -559,6 +569,7 @@ export default function Header() {
                       </div>
                     </div>
 
+                    {/* Mobile Account Links */}
                     <div className="border-t border-[#deded9] p-2">
                       <ProfileMenuItem
                         href="/profile"
@@ -597,6 +608,7 @@ export default function Header() {
                       />
                     </div>
 
+                    {/* Mobile Sign Out */}
                     <div className="border-t border-[#deded9] p-2">
                       <button
                         type="button"
@@ -613,7 +625,9 @@ export default function Header() {
                   <div className="grid grid-cols-2 gap-2">
                     <Link
                       href="/login"
-                      onClick={() => setMenuOpen(false)}
+                      onClick={() =>
+                        setMenuOpen(false)
+                      }
                       className="rounded-lg border border-[#d3d3ce] bg-white px-4 py-2.5 text-center text-sm font-medium text-[#333330] transition-colors hover:border-[#aaa9a3] hover:bg-[#f8f8f6]"
                     >
                       Login
@@ -621,7 +635,9 @@ export default function Header() {
 
                     <Link
                       href="/register"
-                      onClick={() => setMenuOpen(false)}
+                      onClick={() =>
+                        setMenuOpen(false)
+                      }
                       className="rounded-lg bg-[#171717] px-4 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-[#303030]"
                     >
                       Get started
@@ -637,6 +653,10 @@ export default function Header() {
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Profile Menu Item                                                          */
+/* -------------------------------------------------------------------------- */
+
 function ProfileMenuItem({
   href,
   icon,
@@ -644,7 +664,7 @@ function ProfileMenuItem({
   onClick,
 }: {
   href: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   onClick: () => void;
 }) {
@@ -663,6 +683,10 @@ function ProfileMenuItem({
     </Link>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Icons                                                                      */
+/* -------------------------------------------------------------------------- */
 
 function ChevronDownIcon({
   open,
