@@ -32,6 +32,23 @@ export default function HomePageAnimations({
         return;
       }
 
+      /*
+       * Mobile devices get a deliberately lighter animation system.
+       *
+       * The Home page contains:
+       * - blurred decorative layers
+       * - a transformed code window
+       * - several article/card sections
+       * - ScrollTrigger parallax
+       *
+       * Running all desktop ScrollTriggers on a phone creates unnecessary
+       * animation work and can cause jank or browser crashes on
+       * lower-memory devices.
+       */
+      const isMobile = window.matchMedia(
+        "(max-width: 767px)",
+      ).matches;
+
       const sections = gsap.utils.toArray<HTMLElement>(
         "main > section",
         root,
@@ -42,7 +59,194 @@ export default function HomePageAnimations({
       }
 
       /* ------------------------------------------------------------------ */
-      /* Hero                                                                */
+      /* Mobile                                                              */
+      /* ------------------------------------------------------------------ */
+
+      if (isMobile) {
+        const hero = sections[0];
+
+        if (hero) {
+          const heroIdentity = hero.querySelector<HTMLElement>(
+            ".relative.mx-auto > .flex.items-center.justify-between",
+          );
+
+          const heroContent = hero.querySelector<HTMLElement>(
+            ".relative.mx-auto > .mt-16",
+          );
+
+          const heroText = heroContent
+            ? Array.from(
+                heroContent.querySelectorAll<HTMLElement>(
+                  "p, h1, .mt-8, .mt-9",
+                ),
+              ).filter((element) => {
+                return !element.closest(
+                  ".relative.mx-auto > .mt-16 > .relative",
+                );
+              })
+            : [];
+
+          const heroCodeWindow =
+            heroContent?.querySelector<HTMLElement>(
+              ".relative.mx-auto .relative.overflow-hidden.rounded-2xl",
+            ) ?? null;
+
+          const heroStatus = heroContent?.querySelector<HTMLElement>(
+            ".absolute.-bottom-6",
+          );
+
+          const heroTopicBar = hero.querySelector<HTMLElement>(
+            ".relative.mx-auto > .mt-24",
+          );
+
+          if (heroIdentity) {
+            gsap.fromTo(
+              heroIdentity,
+              {
+                opacity: 0,
+                y: -8,
+              },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.45,
+                ease: "power2.out",
+              },
+            );
+          }
+
+          if (heroText.length) {
+            gsap.fromTo(
+              heroText,
+              {
+                opacity: 0,
+                y: 18,
+              },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.55,
+                ease: "power2.out",
+                stagger: 0.06,
+                delay: 0.05,
+                clearProps: "opacity,transform",
+              },
+            );
+          }
+
+          /*
+           * Mobile code-window animation.
+           *
+           * IMPORTANT:
+           * No scale
+           * No rotation
+           * No parallax
+           * No scrub
+           *
+           * Only opacity + vertical movement.
+           */
+          if (heroCodeWindow) {
+            gsap.fromTo(
+              heroCodeWindow,
+              {
+                opacity: 0,
+                y: 18,
+              },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.65,
+                ease: "power2.out",
+                delay: 0.12,
+                clearProps: "opacity,transform",
+              },
+            );
+          }
+
+          if (heroStatus) {
+            gsap.fromTo(
+              heroStatus,
+              {
+                opacity: 0,
+                y: 8,
+              },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.4,
+                ease: "power2.out",
+                delay: 0.3,
+                clearProps: "opacity,transform",
+              },
+            );
+          }
+
+          if (heroTopicBar) {
+            gsap.fromTo(
+              heroTopicBar,
+              {
+                opacity: 0,
+                y: 12,
+              },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.45,
+                ease: "power2.out",
+                delay: 0.25,
+                clearProps: "opacity,transform",
+              },
+            );
+          }
+        }
+
+        /*
+         * Only ONE ScrollTrigger per section on mobile.
+         *
+         * We deliberately do not animate individual cards, numbers,
+         * glows, or decorative elements on mobile.
+         */
+        sections.slice(1).forEach((section) => {
+          const contentRoot =
+            section.querySelector<HTMLElement>(
+              ":scope > div:not(.pointer-events-none)",
+            ) ?? section;
+
+          gsap.fromTo(
+            contentRoot,
+            {
+              opacity: 0,
+              y: 18,
+            },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.55,
+              ease: "power2.out",
+              clearProps: "opacity,transform",
+              scrollTrigger: {
+                trigger: section,
+                start: "top 88%",
+                toggleActions: "play none none none",
+                once: true,
+              },
+            },
+          );
+        });
+
+        /*
+         * No mobile:
+         * - parallax
+         * - glow movement
+         * - card transforms
+         * - code-window scroll animation
+         * - global ScrollTrigger.refresh()
+         */
+        return;
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* Desktop / Tablet                                                    */
       /* ------------------------------------------------------------------ */
 
       const hero = sections[0];
@@ -66,7 +270,9 @@ export default function HomePageAnimations({
                 "p, h1, .mt-8, .mt-9",
               ),
             ).filter((element) => {
-              return !element.closest(".relative.mx-auto > .mt-16 > .relative");
+              return !element.closest(
+                ".relative.mx-auto > .mt-16 > .relative",
+              );
             })
           : [];
 
@@ -88,7 +294,10 @@ export default function HomePageAnimations({
         if (heroIdentity) {
           gsap.fromTo(
             heroIdentity,
-            { opacity: 0, y: -12 },
+            {
+              opacity: 0,
+              y: -12,
+            },
             {
               opacity: 1,
               y: 0,
@@ -177,6 +386,9 @@ export default function HomePageAnimations({
           );
         }
 
+        /*
+         * Desktop-only decorative parallax.
+         */
         heroDecorations.forEach((element, index) => {
           gsap.to(element, {
             y: index % 2 === 0 ? -55 : 38,
@@ -191,6 +403,9 @@ export default function HomePageAnimations({
           });
         });
 
+        /*
+         * Desktop-only code-window parallax.
+         */
         if (heroCodeWindow) {
           gsap.to(heroCodeWindow, {
             y: -24,
@@ -216,7 +431,9 @@ export default function HomePageAnimations({
             ":scope > div:not(.pointer-events-none)",
           ) ?? section;
 
-        const directChildren = Array.from(contentRoot.children).filter(
+        const directChildren = Array.from(
+          contentRoot.children,
+        ).filter(
           (child): child is HTMLElement =>
             child instanceof HTMLElement &&
             !child.classList.contains("pointer-events-none"),
@@ -228,7 +445,9 @@ export default function HomePageAnimations({
 
         const sectionTargets =
           directChildren.length === 1
-            ? Array.from(directChildren[0].children).filter(
+            ? Array.from(
+                directChildren[0].children,
+              ).filter(
                 (child): child is HTMLElement =>
                   child instanceof HTMLElement,
               )
@@ -236,7 +455,11 @@ export default function HomePageAnimations({
 
         const targets = sectionTargets.filter((element) => {
           const text = element.textContent?.trim() ?? "";
-          return text.length > 0 || element.querySelector("a, button");
+
+          return (
+            text.length > 0 ||
+            element.querySelector("a, button")
+          );
         });
 
         if (!targets.length) {
@@ -266,12 +489,12 @@ export default function HomePageAnimations({
         );
 
         /*
-         * Give list/card sections an additional staggered entrance.
-         * This is intentionally limited to direct interactive elements so
-         * paragraphs and layout wrappers are not over-animated.
+         * Desktop card entrance.
          */
         const cards = Array.from(
-          section.querySelectorAll<HTMLElement>("a.group"),
+          section.querySelectorAll<HTMLElement>(
+            "a.group",
+          ),
         );
 
         if (cards.length > 0) {
@@ -292,7 +515,10 @@ export default function HomePageAnimations({
               clearProps: "opacity,transform",
               scrollTrigger: {
                 trigger: section,
-                start: sectionIndex === 0 ? "top 82%" : "top 76%",
+                start:
+                  sectionIndex === 0
+                    ? "top 82%"
+                    : "top 76%",
                 toggleActions: "play none none none",
                 once: true,
               },
@@ -306,7 +532,8 @@ export default function HomePageAnimations({
       /* ------------------------------------------------------------------ */
 
       const rowSections = sections.filter((section) => {
-        const heading = section.querySelector("h2")?.textContent ?? "";
+        const heading =
+          section.querySelector("h2")?.textContent ?? "";
 
         return (
           heading.includes("people you follow") ||
@@ -374,32 +601,28 @@ export default function HomePageAnimations({
       /* ------------------------------------------------------------------ */
 
       const featured = sections.find((section) =>
-        (section.querySelector("h2")?.textContent ?? "").includes(
-          "Start with",
-        ),
+        (
+          section.querySelector("h2")?.textContent ?? ""
+        ).includes("Start with"),
       );
 
       if (featured) {
-        const featuredCard = featured.querySelector<HTMLElement>(
-          "a.group",
-        );
+        const featuredCard =
+          featured.querySelector<HTMLElement>(
+            "a.group",
+          );
 
         const largeNumber = featuredCard
           ? Array.from(
-              featuredCard.querySelectorAll<HTMLElement>("div"),
+              featuredCard.querySelectorAll<HTMLElement>(
+                "div",
+              ),
             ).find(
               (element) =>
                 element.classList.contains("absolute") &&
                 element.textContent?.trim() === "01",
             ) ?? null
           : null;
-
-        /*
-         * Do not animate the featured card itself with GSAP.
-         * The card already has Tailwind hover transforms, so keeping
-         * parallax on the decorative number avoids CSS/GSAP transform
-         * conflicts on repeated hover.
-         */
 
         if (largeNumber) {
           gsap.to(largeNumber, {
@@ -421,14 +644,16 @@ export default function HomePageAnimations({
       /* ------------------------------------------------------------------ */
 
       const topicsSection = sections.find((section) =>
-        (section.querySelector("h2")?.textContent ?? "").includes(
-          "rabbit hole",
-        ),
+        (
+          section.querySelector("h2")?.textContent ?? ""
+        ).includes("rabbit hole"),
       );
 
       if (topicsSection) {
         const topicCards = Array.from(
-          topicsSection.querySelectorAll<HTMLElement>("a.group"),
+          topicsSection.querySelectorAll<HTMLElement>(
+            "a.group",
+          ),
         );
 
         topicCards.forEach((card, index) => {
@@ -482,7 +707,8 @@ export default function HomePageAnimations({
           });
         });
 
-        const ctaHeading = cta.querySelector<HTMLElement>("h2");
+        const ctaHeading =
+          cta.querySelector<HTMLElement>("h2");
 
         if (ctaHeading) {
           gsap.fromTo(
@@ -510,19 +736,6 @@ export default function HomePageAnimations({
       /* ------------------------------------------------------------------ */
       /* Interaction feedback                                                */
       /* ------------------------------------------------------------------ */
-
-      /*
-       * Important:
-       * The Home page already uses Tailwind `hover:-translate-y-*`,
-       * `group-hover:translate-x-*`, and transition classes on cards.
-       *
-       * Those CSS rules and a GSAP transform on the same element would both
-       * write to `transform`, which causes repeated hovers to feel weaker or
-       * inconsistent.
-       *
-       * Therefore cards keep their CSS hover transform. GSAP is used only
-       * for the press feedback on normal buttons/CTAs.
-       */
 
       const buttons = Array.from(
         root.querySelectorAll<HTMLElement>(
@@ -556,45 +769,67 @@ export default function HomePageAnimations({
         button.style.transformOrigin = "center center";
         button.style.willChange = "transform";
 
-        button.addEventListener("pointerdown", pressIn);
-        button.addEventListener("pointerup", pressOut);
-        button.addEventListener("pointercancel", pressOut);
-        button.addEventListener("pointerleave", pressOut);
-        button.addEventListener("focus", pressIn);
-        button.addEventListener("blur", pressOut);
+        button.addEventListener(
+          "pointerdown",
+          pressIn,
+        );
 
-        button.addEventListener("keydown", (event: KeyboardEvent) => {
-          if (
-            (event.key === "Enter" || event.key === " ") &&
-            !event.repeat
-          ) {
-            pressIn();
-          }
-        });
+        button.addEventListener(
+          "pointerup",
+          pressOut,
+        );
 
-        button.addEventListener("keyup", (event: KeyboardEvent) => {
-          if (event.key === "Enter" || event.key === " ") {
-            pressOut();
-          }
-        });
+        button.addEventListener(
+          "pointercancel",
+          pressOut,
+        );
+
+        button.addEventListener(
+          "pointerleave",
+          pressOut,
+        );
+
+        button.addEventListener(
+          "focus",
+          pressIn,
+        );
+
+        button.addEventListener(
+          "blur",
+          pressOut,
+        );
+
+        button.addEventListener(
+          "keydown",
+          (event: KeyboardEvent) => {
+            if (
+              (event.key === "Enter" ||
+                event.key === " ") &&
+              !event.repeat
+            ) {
+              pressIn();
+            }
+          },
+        );
+
+        button.addEventListener(
+          "keyup",
+          (event: KeyboardEvent) => {
+            if (
+              event.key === "Enter" ||
+              event.key === " "
+            ) {
+              pressOut();
+            }
+          },
+        );
       });
 
       /*
-       * Links/cards deliberately do not receive a GSAP transform here.
-       * Their existing Tailwind hover transitions remain the single source
-       * of truth, making repeated hover interactions perfectly consistent.
+       * Refresh once after the page has settled.
        *
-       * The CSS already provides:
-       * - card lift
-       * - border/shadow transition
-       * - title color transition
-       * - arrow movement
-       * - featured number movement
-       */
-
-      /*
-       * Refresh after the page has settled. This is useful because the Home
-       * page contains server-rendered article lists whose heights can differ.
+       * This is desktop/tablet only. Mobile intentionally
+       * avoids a global refresh.
        */
       requestAnimationFrame(() => {
         ScrollTrigger.refresh();
