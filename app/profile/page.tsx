@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { createClient } from "@/components/lib/supabase/client";
 
@@ -12,10 +11,6 @@ type Profile = {
   display_name: string | null;
   username: string | null;
   avatar_url: string | null;
-  bio: string | null;
-  website: string | null;
-  github_url: string | null;
-  linkedin_url: string | null;
   created_at: string | null;
 };
 
@@ -74,20 +69,16 @@ function formatViews(value: number | null) {
 }
 
 export default function ProfilePage() {
-  const router = useRouter();
-
   const [profile, setProfile] = useState<Profile | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [authChecking, setAuthChecking] = useState(true);
-
-  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadProfile() {
+      const supabase = createClient();
 
       try {
         const {
@@ -97,15 +88,11 @@ export default function ProfilePage() {
 
         if (userError || !user) {
           if (!cancelled) {
-            setAuthChecking(false);
-            router.replace("/login?redirectTo=%2Fprofile");
+            setError("You need to be logged in to view your profile.");
+            setLoading(false);
           }
 
           return;
-        }
-
-        if (!cancelled) {
-          setAuthChecking(false);
         }
 
         const [
@@ -115,7 +102,7 @@ export default function ProfilePage() {
           supabase
             .from("profiles")
             .select(
-              "id, display_name, username, avatar_url, bio, website, github_url, linkedin_url, created_at",
+              "id, display_name, username, avatar_url, created_at",
             )
             .eq("id", user.id)
             .maybeSingle(),
@@ -174,10 +161,6 @@ export default function ProfilePage() {
             metadataUsername ||
             null,
           avatar_url: profileData?.avatar_url ?? null,
-          bio: profileData?.bio?.trim() || null,
-          website: profileData?.website?.trim() || null,
-          github_url: profileData?.github_url?.trim() || null,
-          linkedin_url: profileData?.linkedin_url?.trim() || null,
           created_at:
             profileData?.created_at ??
             user.created_at ??
@@ -203,7 +186,7 @@ export default function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [router, supabase]);
+  }, []);
 
   const displayName = useMemo(() => {
     return profile?.display_name?.trim() || "Developer";
@@ -237,7 +220,7 @@ export default function ProfilePage() {
     return Array.from(uniqueCategories);
   }, [articles]);
 
-  if (authChecking || loading) {
+  if (loading) {
     return (
       <main className="min-h-screen bg-[#f8f8f5] text-[#171717]">
         <section className="relative overflow-hidden border-b border-[#deded9]">
@@ -300,6 +283,36 @@ export default function ProfilePage() {
     );
   }
 
+  if (!profile) {
+    return (
+      <main className="min-h-screen bg-[#f8f8f5] text-[#171717]">
+        <section className="mx-auto flex min-h-[70vh] max-w-6xl items-center px-6 sm:px-8 lg:px-10">
+          <div className="w-full border-y border-[#deded9] py-20 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#3568e8]">
+              Profile
+            </p>
+
+            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em]">
+              Profile not found.
+            </h1>
+
+            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-[#777771]">
+              We could not find the profile information for this account.
+            </p>
+
+            <Link
+              href="/"
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#171717] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#292929]"
+            >
+              Back to home
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#f8f8f5] text-[#171717]">
       {/* =========================================================
@@ -334,22 +347,13 @@ export default function ProfilePage() {
               Back to home
             </Link>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href="/settings"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#deded9] bg-white/90 px-4 py-2.5 text-xs font-semibold text-[#171717] transition hover:border-[#bdbdb6]"
-              >
-                Edit profile
-              </Link>
-
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#deded9] bg-white/90 px-4 py-2.5 text-xs font-semibold text-[#171717] transition hover:border-[#bdbdb6]"
-              >
-                Go to dashboard
-                <span aria-hidden="true">→</span>
-              </Link>
-            </div>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#deded9] bg-white/90 px-4 py-2.5 text-xs font-semibold text-[#171717] transition hover:border-[#bdbdb6]"
+            >
+              Go to dashboard
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
 
           {/* Main profile area */}
@@ -392,8 +396,8 @@ export default function ProfilePage() {
               </div>
 
               <p className="mt-8 max-w-2xl text-base leading-7 text-[#777771] sm:text-lg">
-                {profile?.bio ||
-                  "A developer documenting projects, experiments, lessons, and the things learned while building."}
+                A developer documenting projects, experiments, lessons, and
+                the things learned while building.
               </p>
             </div>
 
@@ -545,48 +549,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
-
-      {(profile.website || profile.github_url || profile.linkedin_url) && (
-        <section className="border-b border-[#deded9]">
-          <div className="mx-auto max-w-6xl px-6 py-8 sm:px-8 lg:px-10">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="mr-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#999992]">
-                Links
-              </span>
-              {profile.website && (
-                <a
-                  href={profile.website}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-[#deded9] bg-white px-4 py-2 text-xs font-medium text-[#555550] transition hover:border-[#bdbdb6] hover:text-[#171717]"
-                >
-                  Website
-                </a>
-              )}
-              {profile.github_url && (
-                <a
-                  href={profile.github_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-[#deded9] bg-white px-4 py-2 text-xs font-medium text-[#555550] transition hover:border-[#bdbdb6] hover:text-[#171717]"
-                >
-                  GitHub
-                </a>
-              )}
-              {profile.linkedin_url && (
-                <a
-                  href={profile.linkedin_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full border border-[#deded9] bg-white px-4 py-2 text-xs font-medium text-[#555550] transition hover:border-[#bdbdb6] hover:text-[#171717]"
-                >
-                  LinkedIn
-                </a>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* =========================================================
           PUBLISHED ARTICLES
