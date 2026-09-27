@@ -67,6 +67,39 @@ function formatDate(dateString: string) {
   }).format(new Date(dateString));
 }
 
+function normalizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function articleMatchesSearch(article: Article, query: string) {
+  const normalizedQuery = normalizeSearchText(query);
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  const searchableText = normalizeSearchText(
+    [
+      article.title,
+      article.description ?? "",
+      article.category,
+      article.content,
+    ].join(" "),
+  );
+
+  const searchTerms = normalizedQuery
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return searchTerms.every((term) =>
+    searchableText.includes(term),
+  );
+}
+
 function ArticlesPageContent() {
   const pageRef = useRef<HTMLElement | null>(null);
 
@@ -88,7 +121,9 @@ function ArticlesPageContent() {
   const [topicsOpen, setTopicsOpen] = useState(false);
 
   useEffect(() => {
-    setSelectedTopic(topicFromUrl ? topicFromUrl.toLowerCase() : "all");
+    setSelectedTopic(
+      topicFromUrl ? topicFromUrl.toLowerCase() : "all",
+    );
   }, [topicFromUrl]);
 
   useEffect(() => {
@@ -196,20 +231,15 @@ function ArticlesPageContent() {
   }, [availableTopics]);
 
   const filteredArticles = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-
     return articles.filter((article) => {
       const matchesTopic =
         selectedTopic === "all" ||
         categoryToSlug(article.category) === selectedTopic;
 
-      const matchesSearch =
-        query.length === 0 ||
-        article.title.toLowerCase().includes(query) ||
-        (article.description ?? "")
-          .toLowerCase()
-          .includes(query) ||
-        article.category.toLowerCase().includes(query);
+      const matchesSearch = articleMatchesSearch(
+        article,
+        searchQuery,
+      );
 
       return matchesTopic && matchesSearch;
     });
@@ -265,6 +295,7 @@ function ArticlesPageContent() {
       className="overflow-hidden bg-[#f5f5f1] text-[#151515]"
     >
       <ArticlesPageAnimations root={pageRef} />
+
       {/* =====================================================
           HERO
       ===================================================== */}
@@ -883,7 +914,6 @@ function ArticlesPageContent() {
   );
 }
 
-
 function ArticlesPageAnimations({
   root,
 }: {
@@ -905,7 +935,9 @@ function ArticlesPageAnimations({
       const searchSection = hero?.nextElementSibling as HTMLElement | null;
       const archiveSection =
         searchSection?.nextElementSibling as HTMLElement | null;
-      const ctaSection = page.querySelector<HTMLElement>("section:last-of-type");
+      const ctaSection = page.querySelector<HTMLElement>(
+        "section:last-of-type",
+      );
 
       /* ------------------------------------------------------------
        * HERO
@@ -913,9 +945,11 @@ function ArticlesPageAnimations({
       const heroIdentity = hero?.querySelector<HTMLElement>(
         ".relative.mx-auto.max-w-7xl > .flex.items-center.justify-between",
       );
+
       const heroContent = hero?.querySelector<HTMLElement>(
         ".relative.mx-auto.max-w-7xl > .mt-20",
       );
+
       const editorialStrip = hero?.querySelector<HTMLElement>(
         ".relative.mx-auto.max-w-7xl > .mt-20.border-y",
       );
@@ -998,7 +1032,9 @@ function ArticlesPageAnimations({
         });
       }
 
-      const archiveGlow = hero?.querySelector<HTMLElement>(".absolute.-inset-5");
+      const archiveGlow = hero?.querySelector<HTMLElement>(
+        ".absolute.-inset-5",
+      );
 
       if (archiveGlow) {
         gsap.to(archiveGlow, {
@@ -1041,121 +1077,48 @@ function ArticlesPageAnimations({
       }
 
       /* ------------------------------------------------------------
-       * ARTICLE CARDS
-       *
-       * GSAP never transforms the clickable <a>.
-       * Tailwind remains the owner of hover:-translate-y-1.
-       * The inner content gets the subtle mouse-follow effect.
+       * ARTICLE ARCHIVE
        * ---------------------------------------------------------- */
-      const cards = Array.from(
-        archiveSection?.querySelectorAll<HTMLElement>(
-          'article > a[href^="/articles/"]',
-        ) ?? [],
-      );
-
-      cards.forEach((card, index) => {
-        gsap.fromTo(
-          card,
-          { opacity: 0, y: 35 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.65,
-            delay: index * 0.07,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: card,
-              start: "top 88%",
-              once: true,
-            },
-          },
+      if (archiveSection) {
+        const heading = archiveSection.querySelector<HTMLElement>(
+          ".flex.flex-col.gap-5.border-b",
         );
 
-        const inner = card.firstElementChild;
-
-        if (!(inner instanceof HTMLElement)) {
-          return;
-        }
-
-        const moveX = gsap.quickTo(inner, "x", {
-          duration: 0.25,
-          ease: "power2.out",
-        });
-
-        const moveY = gsap.quickTo(inner, "y", {
-          duration: 0.25,
-          ease: "power2.out",
-        });
-
-        const handleEnter = () => {
-          gsap.to(inner, {
-            scale: 1.012,
-            duration: 0.28,
-            ease: "power2.out",
-            overwrite: true,
-          });
-        };
-
-        const handleMove = (event: MouseEvent) => {
-          const rect = card.getBoundingClientRect();
-
-          if (!rect.width || !rect.height) {
-            return;
-          }
-
-          const x = (event.clientX - rect.left) / rect.width - 0.5;
-          const y = (event.clientY - rect.top) / rect.height - 0.5;
-
-          moveX(x * 4);
-          moveY(y * 4);
-        };
-
-        const handleLeave = () => {
-          moveX(0);
-          moveY(0);
-
-          gsap.to(inner, {
-            x: 0,
-            y: 0,
-            scale: 1,
-            duration: 0.32,
-            ease: "power3.out",
-            overwrite: true,
-          });
-        };
-
-        card.addEventListener("mouseenter", handleEnter);
-        card.addEventListener("mousemove", handleMove);
-        card.addEventListener("mouseleave", handleLeave);
-
-        return () => {
-          card.removeEventListener("mouseenter", handleEnter);
-          card.removeEventListener("mousemove", handleMove);
-          card.removeEventListener("mouseleave", handleLeave);
-        };
-      });
-
-      /* ------------------------------------------------------------
-       * CTA
-       * ---------------------------------------------------------- */
-      if (ctaSection) {
-        const ctaContent = ctaSection.querySelector<HTMLElement>(
-          ".relative.mx-auto.max-w-7xl",
+        const cards = archiveSection.querySelectorAll<HTMLElement>(
+          "article",
         );
 
-        if (ctaContent) {
+        if (heading) {
           gsap.fromTo(
-            ctaContent.children,
-            { opacity: 0, y: 30 },
+            heading,
+            { opacity: 0, y: 24 },
             {
               opacity: 1,
               y: 0,
-              duration: 0.75,
-              stagger: 0.1,
+              duration: 0.7,
               ease: "power3.out",
               scrollTrigger: {
-                trigger: ctaSection,
+                trigger: archiveSection,
                 start: "top 80%",
+                once: true,
+              },
+            },
+          );
+        }
+
+        if (cards.length > 0) {
+          gsap.fromTo(
+            cards,
+            { opacity: 0, y: 35 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.7,
+              stagger: 0.08,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: archiveSection,
+                start: "top 72%",
                 once: true,
               },
             },
@@ -1163,84 +1126,61 @@ function ArticlesPageAnimations({
         }
       }
 
-      const ctaGlow = ctaSection?.querySelector<HTMLElement>(
-        ".absolute.right-\\[-100px\\]",
-      );
-
-      if (ctaGlow && ctaSection) {
-        gsap.to(ctaGlow, {
-          x: -70,
-          y: 45,
-          scale: 1.12,
-          ease: "none",
-          scrollTrigger: {
-            trigger: ctaSection,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 1.4,
-          },
-        });
-      }
-
       /* ------------------------------------------------------------
-       * TOPIC MODAL
+       * CTA
        * ---------------------------------------------------------- */
-      const modal = page.querySelector<HTMLElement>('[role="dialog"]');
-
-      if (modal) {
+      if (ctaSection) {
         gsap.fromTo(
-          modal,
-          { opacity: 0, scale: 0.96, y: 22 },
+          ctaSection.children,
+          { opacity: 0, y: 28 },
           {
             opacity: 1,
-            scale: 1,
             y: 0,
-            duration: 0.3,
+            duration: 0.75,
+            stagger: 0.1,
             ease: "power3.out",
+            scrollTrigger: {
+              trigger: ctaSection,
+              start: "top 80%",
+              once: true,
+            },
           },
         );
       }
     },
-    { scope: root },
+    {
+      scope: root,
+      dependencies: [],
+      revertOnUpdate: false,
+    },
   );
 
   return null;
 }
 
-export default function ArticlesPage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="min-h-screen bg-[#f5f5f1] text-[#151515]">
-          <div className="mx-auto max-w-7xl px-6 py-20 sm:px-8 lg:px-10">
-            <div className="animate-pulse">
-              <div className="h-4 w-28 rounded bg-[#deded9]" />
-              <div className="mt-6 h-20 w-72 rounded bg-[#deded9]" />
-              <div className="mt-6 h-5 w-full max-w-2xl rounded bg-[#e7e7e2]" />
-              <div className="mt-12 h-48 rounded-[1.75rem] bg-white" />
-            </div>
-          </div>
-        </main>
-      }
-    >
-      <ArticlesPageContent />
-    </Suspense>
-  );
-}
-
-
 function SearchIcon() {
   return (
     <svg
+      width="18"
+      height="18"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
       aria-hidden="true"
     >
-      <circle cx="11" cy="11" r="6.5" />
-      <path d="m16 16 4.5 4.5" />
+      <circle
+        cx="11"
+        cy="11"
+        r="6.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+
+      <path
+        d="M16 16L21 21"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -1248,15 +1188,33 @@ function SearchIcon() {
 function CloseIcon() {
   return (
     <svg
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-4 w-4"
       aria-hidden="true"
     >
-      <path d="m6 6 12 12" />
-      <path d="m18 6-12 12" />
+      <path
+        d="M6 6L18 18"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+
+      <path
+        d="M18 6L6 18"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
     </svg>
+  );
+}
+
+export default function ArticlesPage() {
+  return (
+    <Suspense fallback={null}>
+      <ArticlesPageContent />
+    </Suspense>
   );
 }
