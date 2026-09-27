@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -67,7 +67,7 @@ function formatDate(dateString: string) {
   }).format(new Date(dateString));
 }
 
-export default function ArticlesPage() {
+function ArticlesPageContent() {
   const pageRef = useRef<HTMLElement | null>(null);
 
   const router = useRouter();
@@ -1202,6 +1202,28 @@ function ArticlesPageAnimations({
 
   return null;
 }
+
+export default function ArticlesPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#f5f5f1] text-[#151515]">
+          <div className="mx-auto max-w-7xl px-6 py-20 sm:px-8 lg:px-10">
+            <div className="animate-pulse">
+              <div className="h-4 w-28 rounded bg-[#deded9]" />
+              <div className="mt-6 h-20 w-72 rounded bg-[#deded9]" />
+              <div className="mt-6 h-5 w-full max-w-2xl rounded bg-[#e7e7e2]" />
+              <div className="mt-12 h-48 rounded-[1.75rem] bg-white" />
+            </div>
+          </div>
+        </main>
+      }
+    >
+      <ArticlesPageContent />
+    </Suspense>
+  );
+}
+
 
 function SearchIcon() {
   return (
