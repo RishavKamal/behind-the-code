@@ -3,6 +3,20 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import CodeMirror from "@uiw/react-codemirror";
+import { javascript } from "@codemirror/lang-javascript";
+import { java } from "@codemirror/lang-java";
+import { python } from "@codemirror/lang-python";
+import { cpp } from "@codemirror/lang-cpp";
+import { sql } from "@codemirror/lang-sql";
+import { html } from "@codemirror/lang-html";
+import { css } from "@codemirror/lang-css";
+import { json } from "@codemirror/lang-json";
+import { rust } from "@codemirror/lang-rust";
+import { go } from "@codemirror/lang-go";
+import { markdown } from "@codemirror/lang-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 import { createClient } from "@/components/lib/supabase/client";
 import ScrollReveal from "@/components/scroll-reveal";
@@ -18,6 +32,120 @@ const categories = [
   "Projects",
   "Learning",
 ];
+
+
+type CodeLanguage =
+  | "javascript"
+  | "typescript"
+  | "java"
+  | "python"
+  | "cpp"
+  | "sql"
+  | "html"
+  | "css"
+  | "json"
+  | "rust"
+  | "go"
+  | "markdown"
+  | "text";
+
+const languageLabels: Record<CodeLanguage, string> = {
+  javascript: "JavaScript",
+  typescript: "TypeScript",
+  java: "Java",
+  python: "Python",
+  cpp: "C / C++",
+  sql: "SQL",
+  html: "HTML",
+  css: "CSS",
+  json: "JSON",
+  rust: "Rust",
+  go: "Go",
+  markdown: "Markdown",
+  text: "Plain Text",
+};
+
+function getLanguageExtension(language: CodeLanguage) {
+  switch (language) {
+    case "javascript":
+      return javascript();
+    case "typescript":
+      return javascript({ typescript: true });
+    case "java":
+      return java();
+    case "python":
+      return python();
+    case "cpp":
+      return cpp();
+    case "sql":
+      return sql();
+    case "html":
+      return html();
+    case "css":
+      return css();
+    case "json":
+      return json();
+    case "rust":
+      return rust();
+    case "go":
+      return go();
+    case "markdown":
+      return markdown();
+    case "text":
+    default:
+      return null;
+  }
+}
+
+function isSafeUrl(url: string) {
+  return /^(https?:\/\/|mailto:)/i.test(url.trim());
+}
+
+function renderInline(text: string): React.ReactNode[] {
+  const pattern = /(\*\*\*[^*]+\*\*\*|\*\*[^*]+\*\*|~~[^~]+~~|`[^`]+`|\*[^*]+\*|_[^_]+_|\[[^\]]+\]\([^)]+\))/g;
+  const parts = text.split(pattern);
+
+  return parts.map((part, index) => {
+    if (!part) return null;
+    if (part.startsWith("***") && part.endsWith("***") && part.length > 6) {
+      return <strong key={index}><em>{part.slice(3, -3)}</em></strong>;
+    }
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("~~") && part.endsWith("~~") && part.length > 4) {
+      return <del key={index}>{part.slice(2, -2)}</del>;
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return <code key={index} className="rounded bg-[#f1f1ed] px-1.5 py-0.5 font-mono text-sm">{part.slice(1, -1)}</code>;
+    }
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+      return <em key={index}>{part.slice(1, -1)}</em>;
+    }
+    if (part.startsWith("_") && part.endsWith("_") && part.length > 2) {
+      return <em key={index}>{part.slice(1, -1)}</em>;
+    }
+    if (part.startsWith("[") && part.includes("](")) {
+      const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+      if (match) {
+        const [, label, url] = match;
+        if (isSafeUrl(url)) {
+          return <a key={index} href={url} target="_blank" rel="noopener noreferrer" className="text-[#3568e8] underline underline-offset-2 hover:text-[#214fbf]">{label}</a>;
+        }
+      }
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
+
+function isTableSeparator(line: string) {
+  const cells = line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+  return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+function splitTableRow(line: string) {
+  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+}
 
 type Article = {
   id: string;
@@ -205,6 +333,20 @@ function EditArticleForm({
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
+  const codeInsertionRef = useRef({
+    start: 0,
+    end: 0,
+  });
+
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [codeDraft, setCodeDraft] = useState("");
+  const [codeLanguage, setCodeLanguage] = useState<CodeLanguage>("text");
+
+  const codeExtensions = useMemo(() => {
+    const extension = getLanguageExtension(codeLanguage);
+    return extension ? [extension] : [];
+  }, [codeLanguage]);
+
   const wordCount = useMemo(() => {
     if (!content.trim()) {
       return 0;
@@ -218,19 +360,14 @@ function EditArticleForm({
   function updateContent(
     before: string,
     after = "",
-    placeholder = "text"
+    placeholder = "text",
   ) {
     const textarea = editorRef.current;
-
-    if (!textarea) {
-      return;
-    }
+    if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-
     const selectedText = content.slice(start, end);
-
     const replacement = selectedText || placeholder;
 
     const nextContent =
@@ -244,206 +381,223 @@ function EditArticleForm({
 
     requestAnimationFrame(() => {
       textarea.focus();
-
-      const selectionStart = start + before.length;
-
-      const selectionEnd = selectionStart + replacement.length;
-
-      textarea.setSelectionRange(selectionStart, selectionEnd);
+      if (selectedText) {
+        const cursorStart = start + before.length;
+        textarea.setSelectionRange(cursorStart, cursorStart + selectedText.length);
+      } else {
+        const cursor = start + before.length + replacement.length;
+        textarea.setSelectionRange(cursor, cursor);
+      }
     });
   }
 
-  function insertAtCursor(text: string, cursorOffset?: number) {
+  function insertAtCursor(text: string) {
     const textarea = editorRef.current;
-
-    if (!textarea) {
-      return;
-    }
+    if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-
-    const nextContent =
-      content.slice(0, start) +
-      text +
-      content.slice(end);
-
+    const nextContent = content.slice(0, start) + text + content.slice(end);
     setContent(nextContent);
 
     requestAnimationFrame(() => {
       textarea.focus();
-
-      const position =
-        cursorOffset !== undefined
-          ? start + cursorOffset
-          : start + text.length;
-
-      textarea.setSelectionRange(position, position);
+      const cursor = start + text.length;
+      textarea.setSelectionRange(cursor, cursor);
     });
   }
 
-  function applyHeading(level: 1 | 2) {
-    const textarea = editorRef.current;
+  function applyBold() { updateContent("**", "**"); }
+  function applyItalic() { updateContent("*", "*"); }
+  function applyStrikethrough() { updateContent("~~", "~~"); }
+  function applyInlineCode() { updateContent("`", "`"); }
 
-    if (!textarea) {
-      return;
-    }
+  function applyHeading(level: 1 | 2 | 3) {
+    const textarea = editorRef.current;
+    if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-
     const selectedText = content.slice(start, end);
+    const prefix = `${"#".repeat(level)} `;
 
-    const prefix = level === 1 ? "# " : "## ";
-
-    if (selectedText) {
-      const nextContent =
-        content.slice(0, start) +
-        prefix +
-        selectedText +
-        content.slice(end);
-
-      setContent(nextContent);
-
-      requestAnimationFrame(() => {
-        textarea.focus();
-
-        textarea.setSelectionRange(
-          start + prefix.length,
-          start + prefix.length + selectedText.length
-        );
-      });
-
+    if (!selectedText) {
+      insertAtCursor(prefix);
       return;
     }
 
-    insertAtCursor(prefix, prefix.length);
+    const formatted = selectedText
+      .split("\n")
+      .map((line) => `${prefix}${line.replace(/^#{1,6}\s+/, "")}`)
+      .join("\n");
+
+    setContent(content.slice(0, start) + formatted + content.slice(end));
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start, start + formatted.length);
+    });
   }
 
-  function applyList() {
+  function applyList(ordered = false) {
     const textarea = editorRef.current;
-
-    if (!textarea) {
-      return;
-    }
+    if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-
     const selectedText = content.slice(start, end);
 
-    if (selectedText) {
-      const formatted = selectedText
-        .split("\n")
-        .map((line) => `- ${line}`)
-        .join("\n");
-
-      const nextContent =
-        content.slice(0, start) +
-        formatted +
-        content.slice(end);
-
-      setContent(nextContent);
-
-      requestAnimationFrame(() => {
-        textarea.focus();
-
-        textarea.setSelectionRange(
-          start,
-          start + formatted.length
-        );
-      });
-
+    if (!selectedText) {
+      insertAtCursor(ordered ? "1. " : "- ");
       return;
     }
 
-    insertAtCursor("- ", 2);
+    const formatted = selectedText.split("\n").map((line, index) => {
+      const cleanLine = line.replace(/^\s*(?:[-*+]|\d+\.)\s+/, "");
+      return ordered ? `${index + 1}. ${cleanLine}` : `- ${cleanLine}`;
+    }).join("\n");
+
+    setContent(content.slice(0, start) + formatted + content.slice(end));
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start, start + formatted.length);
+    });
   }
 
   function applyQuote() {
     const textarea = editorRef.current;
-
-    if (!textarea) {
-      return;
-    }
+    if (!textarea) return;
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-
     const selectedText = content.slice(start, end);
 
-    if (selectedText) {
-      const formatted = selectedText
-        .split("\n")
-        .map((line) => `> ${line}`)
-        .join("\n");
-
-      const nextContent =
-        content.slice(0, start) +
-        formatted +
-        content.slice(end);
-
-      setContent(nextContent);
-
-      requestAnimationFrame(() => {
-        textarea.focus();
-
-        textarea.setSelectionRange(
-          start,
-          start + formatted.length
-        );
-      });
-
+    if (!selectedText) {
+      insertAtCursor("> ");
       return;
     }
 
-    insertAtCursor("> ", 2);
-  }
-
-  function applyCode() {
-    const textarea = editorRef.current;
-
-    if (!textarea) {
-      return;
-    }
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-
-    const selectedText = content.slice(start, end);
-
-    const codeText = selectedText || "your code here";
-
-    const formatted =
-      "```javascript\n" +
-      codeText +
-      "\n```";
-
-    const nextContent =
-      content.slice(0, start) +
-      formatted +
-      content.slice(end);
-
-    setContent(nextContent);
-
+    const formatted = selectedText.split("\n").map((line) => `> ${line}`).join("\n");
+    setContent(content.slice(0, start) + formatted + content.slice(end));
     requestAnimationFrame(() => {
       textarea.focus();
-
-      const codeStart =
-        start + "```javascript\n".length;
-
-      textarea.setSelectionRange(
-        codeStart,
-        codeStart + codeText.length
-      );
+      textarea.setSelectionRange(start, start + formatted.length);
     });
   }
 
+  function applyDivider() { insertAtCursor("\n---\n"); }
+
+  function applyLink() {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.slice(start, end);
+
+    if (selectedText) {
+      const replacement = `[${selectedText}](https://example.com)`;
+      setContent(content.slice(0, start) + replacement + content.slice(end));
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const urlStart = start + selectedText.length + 3;
+        textarea.setSelectionRange(urlStart, urlStart + "https://example.com".length);
+      });
+      return;
+    }
+
+    const replacement = "[link text](https://example.com)";
+    setContent(content.slice(0, start) + replacement + content.slice(end));
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + 1, start + 1 + "link text".length);
+    });
+  }
+
+  function applyTable() {
+    const table =
+      "| Column 1 | Column 2 | Column 3 |\n" +
+      "| --- | --- | --- |\n" +
+      "| Value 1 | Value 2 | Value 3 |\n" +
+      "| Value 4 | Value 5 | Value 6 |";
+    insertAtCursor(`\n${table}\n`);
+  }
+
+  function parseSelectedCodeBlock(selectedText: string) {
+    const trimmed = selectedText.trim();
+    const match = trimmed.match(/^```([^\n]*)\n([\s\S]*?)\n```$/);
+
+    if (!match) {
+      return { language: "text" as CodeLanguage, code: selectedText };
+    }
+
+    const language = match[1].trim().toLowerCase();
+    const supportedLanguage = Object.keys(languageLabels).includes(language)
+      ? (language as CodeLanguage)
+      : "text";
+
+    return { language: supportedLanguage, code: match[2] };
+  }
+
+  function openCodeEditor() {
+    const textarea = editorRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.slice(start, end);
+
+    codeInsertionRef.current = { start, end };
+
+    if (selectedText) {
+      const parsed = parseSelectedCodeBlock(selectedText);
+      setCodeLanguage(parsed.language);
+      setCodeDraft(parsed.code);
+    } else {
+      setCodeLanguage("text");
+      setCodeDraft("");
+    }
+
+    setShowCodeEditor(true);
+  }
+
+  function insertCodeBlock() {
+    const { start, end } = codeInsertionRef.current;
+    const language = codeLanguage === "text" ? "" : codeLanguage;
+    const fencedCode = `\`\`\`${language}\n${codeDraft}\n\`\`\``;
+
+    const before = content.slice(0, start);
+    const after = content.slice(end);
+    let insertion = fencedCode;
+
+    if (before.length > 0 && !before.endsWith("\n")) insertion = `\n\n${insertion}`;
+    if (after.length > 0 && !after.startsWith("\n")) insertion = `${insertion}\n\n`;
+
+    const nextContent = before + insertion + after;
+    setContent(nextContent);
+    setShowCodeEditor(false);
+
+    requestAnimationFrame(() => {
+      const textarea = editorRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      const cursor = before.length + insertion.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  }
+
+  function handleEditorKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    const modifier = event.ctrlKey || event.metaKey;
+
+    if (modifier && event.key.toLowerCase() === "b") { event.preventDefault(); applyBold(); return; }
+    if (modifier && event.key.toLowerCase() === "i") { event.preventDefault(); applyItalic(); return; }
+    if (modifier && event.key.toLowerCase() === "k") { event.preventDefault(); applyLink(); return; }
+    if (modifier && event.shiftKey && event.key === "7") { event.preventDefault(); applyList(true); return; }
+    if (modifier && event.shiftKey && event.key === "8") { event.preventDefault(); applyList(false); return; }
+    if (modifier && event.shiftKey && event.key.toLowerCase() === "c") { event.preventDefault(); openCodeEditor(); }
+  }
+
   function getTags() {
-    return tags
-      .split(",")
-      .map((tag) => tag.trim().toLowerCase())
-      .filter(Boolean);
+    return tags.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean);
   }
 
   async function saveArticle(
@@ -569,6 +723,21 @@ function EditArticleForm({
 
     setShowDeleteModal(false);
   }
+
+  useEffect(() => {
+    if (!showCodeEditor) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setShowCodeEditor(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showCodeEditor]);
 
   useEffect(() => {
     if (!showDeleteModal) {
@@ -784,54 +953,39 @@ function EditArticleForm({
                 {mode === "write" && (
                   <div>
                     {/* Toolbar */}
-                    <div className="flex flex-wrap items-center gap-1 border-b border-[#deded9] px-4 py-2.5">
-                      <ToolbarButton
-                        label="B"
-                        title="Bold"
-                        onClick={() =>
-                          updateContent("**", "**")
-                        }
-                      />
-
-                      <ToolbarButton
-                        label="I"
-                        title="Italic"
-                        onClick={() =>
-                          updateContent("*", "*")
-                        }
-                      />
-
-                      <ToolbarButton
-                        label="H1"
-                        title="Heading 1"
-                        onClick={() => applyHeading(1)}
-                      />
-
-                      <ToolbarButton
-                        label="H2"
-                        title="Heading 2"
-                        onClick={() => applyHeading(2)}
-                      />
+                    <div className="flex flex-wrap items-center gap-1.5 border-b border-[#deded9] bg-[#fafaf8] px-4 py-3">
+                      <ToolbarButton label={<strong>B</strong>} title="Bold — Ctrl/Cmd + B" onClick={applyBold} />
+                      <ToolbarButton label={<em>I</em>} title="Italic — Ctrl/Cmd + I" onClick={applyItalic} />
+                      <ToolbarButton label={<span className="line-through">S</span>} title="Strikethrough" onClick={applyStrikethrough} />
+                      <ToolbarButton label={<span className="font-mono">``</span>} title="Inline code" onClick={applyInlineCode} />
 
                       <div className="mx-1 h-5 w-px bg-[#deded9]" />
 
-                      <ToolbarButton
-                        label="{}"
-                        title="Code block"
-                        onClick={applyCode}
-                      />
+                      <ToolbarButton label="H1" title="Heading 1" onClick={() => applyHeading(1)} />
+                      <ToolbarButton label="H2" title="Heading 2" onClick={() => applyHeading(2)} />
+                      <ToolbarButton label="H3" title="Heading 3" onClick={() => applyHeading(3)} />
 
-                      <ToolbarButton
-                        label="•"
-                        title="Bullet list"
-                        onClick={applyList}
-                      />
+                      <div className="mx-1 h-5 w-px bg-[#deded9]" />
 
-                      <ToolbarButton
-                        label=">"
-                        title="Quote"
-                        onClick={applyQuote}
-                      />
+                      <ToolbarButton label="Link" title="Link — Ctrl/Cmd + K" onClick={applyLink} />
+                      <ToolbarButton label="―" title="Horizontal divider" onClick={applyDivider} />
+                      <ToolbarButton label="•" title="Bullet list" onClick={() => applyList(false)} />
+                      <ToolbarButton label="1." title="Numbered list" onClick={() => applyList(true)} />
+                      <ToolbarButton label={'"'} title="Blockquote" onClick={applyQuote} />
+                      <ToolbarButton label="Table" title="Insert Markdown table" onClick={applyTable} />
+
+                      <div className="mx-1 h-5 w-px bg-[#deded9]" />
+
+                      <button
+                        type="button"
+                        title="Open code editor — Ctrl/Cmd + Shift + C"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={openCodeEditor}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#171717] px-3 text-xs font-semibold text-white transition hover:bg-[#2d2d2d]"
+                      >
+                        <span className="font-mono">{'</>'}</span>
+                        Code
+                      </button>
                     </div>
 
                     {/* Textarea */}
@@ -841,14 +995,14 @@ function EditArticleForm({
                       onChange={(event) =>
                         setContent(event.target.value)
                       }
-                      spellCheck={false}
-                      className="min-h-[520px] w-full resize-y border-0 bg-white px-5 py-5 font-mono text-sm leading-7 text-[#333330] outline-none"
+                      onKeyDown={handleEditorKeyDown}
+                      spellCheck
+                      className="min-h-[620px] w-full resize-y border-0 bg-white px-5 py-6 font-mono text-[13px] leading-7 text-[#252521] outline-none placeholder:text-[#b8b8b0] sm:px-7 sm:py-7"
                     />
 
                     <div className="border-t border-[#deded9] bg-[#fafaf8] px-5 py-3">
                       <p className="text-xs text-[#999992]">
-                        Markdown is supported. Use the toolbar or
-                        write Markdown directly.
+                        Markdown editor · Use the toolbar or keyboard shortcuts.
                       </p>
                     </div>
                   </div>
@@ -1024,6 +1178,113 @@ function EditArticleForm({
         </div>
       </section>
 
+      {/* CodeMirror modal */}
+      {showCodeEditor && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowCodeEditor(false);
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="code-editor-title"
+            className="flex w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-[#deded9] bg-white shadow-2xl"
+          >
+            <div className="flex items-center justify-between border-b border-[#deded9] px-5 py-4">
+              <div>
+                <h2 id="code-editor-title" className="font-semibold text-[#171717]">
+                  Insert Code Block
+                </h2>
+                <p className="mt-1 text-xs text-[#777771]">
+                  Write your code here, choose the language, then insert it into the Markdown article.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowCodeEditor(false)}
+                className="rounded-md px-2 py-1 text-lg text-[#999992] hover:bg-[#f4f4f1] hover:text-[#171717]"
+                aria-label="Close code editor"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between border-b border-[#deded9] bg-[#fafaf8] px-5 py-3">
+              <label htmlFor="code-language" className="text-sm font-medium text-[#555550]">
+                Language
+              </label>
+
+              <select
+                id="code-language"
+                value={codeLanguage}
+                onChange={(event) => setCodeLanguage(event.target.value as CodeLanguage)}
+                className="rounded-lg border border-[#deded9] bg-white px-3 py-2 text-sm text-[#171717] outline-none focus:border-[#999992]"
+              >
+                {(Object.keys(languageLabels) as CodeLanguage[]).map((language) => (
+                  <option key={language} value={language}>
+                    {languageLabels[language]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="bg-white p-4">
+              <div className="overflow-hidden rounded-lg border border-[#deded9]">
+                <CodeMirror
+                  value={codeDraft}
+                  height="440px"
+                  theme="light"
+                  extensions={codeExtensions}
+                  onChange={(value) => setCodeDraft(value)}
+                  basicSetup={{
+                    lineNumbers: true,
+                    foldGutter: true,
+                    dropCursor: false,
+                    allowMultipleSelections: true,
+                    indentOnInput: true,
+                    bracketMatching: true,
+                    closeBrackets: true,
+                    autocompletion: true,
+                    rectangularSelection: true,
+                    highlightSelectionMatches: true,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-[#deded9] bg-[#fafaf8] px-5 py-4">
+              <div className="text-xs text-[#777771]">
+                The code will be stored as a Markdown fenced code block.
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCodeEditor(false)}
+                  className="rounded-lg border border-[#deded9] bg-white px-4 py-2 text-sm font-medium text-[#555550] hover:bg-[#f8f8f6]"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!codeDraft.trim()}
+                  onClick={insertCodeBlock}
+                  className="rounded-lg bg-[#171717] px-4 py-2 text-sm font-medium text-white hover:bg-[#303030] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Insert code block
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div
@@ -1124,7 +1385,7 @@ function ToolbarButton({
   title,
   onClick,
 }: {
-  label: string;
+  label: React.ReactNode;
   title: string;
   onClick: () => void;
 }) {
@@ -1186,142 +1447,185 @@ function CloseIcon() {
   );
 }
 
-function MarkdownPreview({
-  content,
-}: {
-  content: string;
-}) {
-  const lines = content.split("\n");
+function MarkdownPreview({ content }: { content: string }) {
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const blocks: React.ReactNode[] = [];
+  let paragraph: string[] = [];
 
-  const elements: React.ReactNode[] = [];
+  const flushParagraph = () => {
+    if (paragraph.length === 0) return;
+    const text = paragraph.join(" ");
+    blocks.push(
+      <p key={`paragraph-${blocks.length}`} className="mb-5 text-base leading-8 text-[#555550] md:text-lg md:leading-[1.9]">
+        {renderInline(text)}
+      </p>,
+    );
+    paragraph = [];
+  };
 
-  let insideCodeBlock = false;
-  let codeLines: string[] = [];
-  let codeLanguage = "";
+  let index = 0;
 
-  lines.forEach((line, index) => {
-    if (line.startsWith("```")) {
-      if (!insideCodeBlock) {
-        insideCodeBlock = true;
-        codeLines = [];
-        codeLanguage = line.slice(3).trim();
-      } else {
-        elements.push(
-          <div
-            key={`code-${index}`}
-            className="my-8 overflow-hidden rounded-xl border border-[#deded9] bg-[#fafaf8]"
-          >
-            <div className="flex items-center justify-between border-b border-[#deded9] px-4 py-2.5">
+  while (index < lines.length) {
+    const line = lines[index];
+
+    if (!line.trim()) {
+      flushParagraph();
+      index++;
+      continue;
+    }
+
+    if (line.trim().startsWith("```")) {
+      flushParagraph();
+      const language = line.trim().slice(3).trim();
+      const codeLines: string[] = [];
+      index++;
+
+      while (index < lines.length && !lines[index].trim().startsWith("```")) {
+        codeLines.push(lines[index]);
+        index++;
+      }
+
+      if (index < lines.length) index++;
+      const code = codeLines.join("\n");
+      const lower = language.toLowerCase();
+      const syntaxLanguage = lower === "javascript" ? "javascript" :
+        lower === "typescript" ? "typescript" :
+        lower === "java" ? "java" :
+        lower === "python" ? "python" :
+        lower === "cpp" || lower === "c++" ? "cpp" :
+        lower === "sql" ? "sql" :
+        lower === "html" ? "markup" :
+        lower === "css" ? "css" :
+        lower === "json" ? "json" :
+        lower === "rust" ? "rust" :
+        lower === "go" ? "go" :
+        lower === "markdown" ? "markdown" : "text";
+
+      blocks.push(
+        <div key={`code-${blocks.length}`} className="mb-8 overflow-hidden rounded-xl border border-[#deded9] bg-[#fafaf8]">
+          <div className="flex items-center justify-between border-b border-[#deded9] px-4 py-2.5">
+            <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#d6d6d0]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#d6d6d0]" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#d6d6d0]" />
               </div>
-
-              {codeLanguage && (
-                <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#999992]">
-                  {codeLanguage}
-                </span>
+              {language && (
+                <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-[#999992]">{language}</span>
               )}
             </div>
-
-            <pre className="overflow-x-auto p-5">
-              <code className="font-mono text-sm leading-7 text-[#333330]">
-                {codeLines.join("\n")}
-              </code>
-            </pre>
+            <button
+              type="button"
+              onClick={() => void navigator.clipboard.writeText(code)}
+              className="rounded-md px-2.5 py-1 text-xs text-[#777771] transition hover:bg-white hover:text-[#171717]"
+            >
+              Copy
+            </button>
           </div>
-        );
-
-        insideCodeBlock = false;
-        codeLines = [];
-        codeLanguage = "";
-      }
-
-      return;
-    }
-
-    if (insideCodeBlock) {
-      codeLines.push(line);
-      return;
+          <div className="overflow-x-auto bg-[#f8f8f6]">
+            <SyntaxHighlighter
+              language={syntaxLanguage}
+              style={oneLight}
+              showLineNumbers
+              wrapLongLines={false}
+              customStyle={{ margin: 0, padding: "18px 0", background: "transparent", fontSize: "14px", lineHeight: "1.75", minWidth: "max-content" }}
+              lineNumberStyle={{ minWidth: "48px", paddingRight: "12px", paddingLeft: "12px", marginRight: "16px", textAlign: "right", userSelect: "none", opacity: 0.5 }}
+              codeTagProps={{ style: { fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" } }}
+            >
+              {code}
+            </SyntaxHighlighter>
+          </div>
+        </div>,
+      );
+      continue;
     }
 
     if (line.startsWith("# ")) {
-      elements.push(
-        <h1
-          key={index}
-          className="mb-6 text-4xl font-bold tracking-[-0.045em] text-[#171717] md:text-5xl"
-        >
-          {line.slice(2)}
-        </h1>
-      );
-
-      return;
+      flushParagraph();
+      blocks.push(<h1 key={`h1-${blocks.length}`} className="mb-5 mt-2 text-4xl font-bold tracking-[-0.045em] text-[#171717] md:text-5xl">{renderInline(line.slice(2))}</h1>);
+      index++;
+      continue;
     }
 
     if (line.startsWith("## ")) {
-      elements.push(
-        <h2
-          key={index}
-          className="mb-4 mt-10 text-2xl font-semibold tracking-[-0.035em] text-[#171717] md:text-3xl"
-        >
-          {line.slice(3)}
-        </h2>
-      );
+      flushParagraph();
+      blocks.push(<h2 key={`h2-${blocks.length}`} className="mb-4 mt-10 text-2xl font-semibold tracking-[-0.035em] text-[#171717] md:text-3xl">{renderInline(line.slice(3))}</h2>);
+      index++;
+      continue;
+    }
 
-      return;
+    if (line.startsWith("### ")) {
+      flushParagraph();
+      blocks.push(<h3 key={`h3-${blocks.length}`} className="mb-3 mt-8 text-xl font-semibold text-[#171717] md:text-2xl">{renderInline(line.slice(4))}</h3>);
+      index++;
+      continue;
+    }
+
+    if (/^\s*((---+)|(\*\*\*)|(___+))\s*$/.test(line)) {
+      flushParagraph();
+      blocks.push(<hr key={`hr-${blocks.length}`} className="my-8 border-0 border-t border-[#deded9]" />);
+      index++;
+      continue;
     }
 
     if (line.startsWith("> ")) {
-      elements.push(
-        <blockquote
-          key={index}
-          className="my-6 border-l-2 border-[#171717] pl-5 text-base leading-8 text-[#777771]"
-        >
-          {line.slice(2)}
-        </blockquote>
-      );
-
-      return;
+      flushParagraph();
+      const quoteLines: string[] = [];
+      while (index < lines.length && lines[index].startsWith("> ")) {
+        quoteLines.push(lines[index].slice(2));
+        index++;
+      }
+      blocks.push(<blockquote key={`quote-${blocks.length}`} className="mb-6 border-l-2 border-[#171717] pl-5 italic leading-8 text-[#777771]">{quoteLines.map((quoteLine, quoteIndex) => <div key={quoteIndex}>{renderInline(quoteLine)}</div>)}</blockquote>);
+      continue;
     }
 
-    if (line.startsWith("- ")) {
-      elements.push(
-        <li
-          key={index}
-          className="ml-5 list-disc text-base leading-8 text-[#555550]"
-        >
-          {line.slice(2)}
-        </li>
-      );
-
-      return;
+    if (/^\s*[-*+]\s+/.test(line)) {
+      flushParagraph();
+      const items: string[] = [];
+      while (index < lines.length && /^\s*[-*+]\s+/.test(lines[index])) {
+        items.push(lines[index].replace(/^\s*[-*+]\s+/, ""));
+        index++;
+      }
+      blocks.push(<ul key={`ul-${blocks.length}`} className="mb-6 list-disc space-y-2 pl-6 leading-7 text-[#555550]">{items.map((item, itemIndex) => <li key={itemIndex}>{renderInline(item)}</li>)}</ul>);
+      continue;
     }
 
-    if (line.trim() === "") {
-      elements.push(
-        <div
-          key={index}
-          className="h-4"
-        />
-      );
-
-      return;
+    if (/^\s*\d+\.\s+/.test(line)) {
+      flushParagraph();
+      const items: string[] = [];
+      while (index < lines.length && /^\s*\d+\.\s+/.test(lines[index])) {
+        items.push(lines[index].replace(/^\s*\d+\.\s+/, ""));
+        index++;
+      }
+      blocks.push(<ol key={`ol-${blocks.length}`} className="mb-6 list-decimal space-y-2 pl-6 leading-7 text-[#555550]">{items.map((item, itemIndex) => <li key={itemIndex}>{renderInline(item)}</li>)}</ol>);
+      continue;
     }
 
-    elements.push(
-      <p
-        key={index}
-        className="text-base leading-8 text-[#555550] md:text-lg md:leading-[1.9]"
-      >
-        {line}
-      </p>
-    );
-  });
+    if (index + 1 < lines.length && line.includes("|") && isTableSeparator(lines[index + 1])) {
+      flushParagraph();
+      const header = splitTableRow(line);
+      index += 2;
+      const rows: string[][] = [];
+      while (index < lines.length && lines[index].includes("|") && lines[index].trim()) {
+        rows.push(splitTableRow(lines[index]));
+        index++;
+      }
+      blocks.push(
+        <div key={`table-${blocks.length}`} className="mb-6 overflow-x-auto rounded-lg border border-[#deded9]">
+          <table className="min-w-full border-collapse text-left text-sm">
+            <thead className="bg-[#fafaf8]"><tr>{header.map((cell, cellIndex) => <th key={cellIndex} className="border-b border-[#deded9] px-4 py-3 font-semibold text-[#171717]">{renderInline(cell)}</th>)}</tr></thead>
+            <tbody>{rows.map((row, rowIndex) => <tr key={rowIndex}>{header.map((_, cellIndex) => <td key={cellIndex} className="border-b border-[#eee] px-4 py-3 text-[#555550]">{renderInline(row[cellIndex] ?? "")}</td>)}</tr>)}</tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
 
-  return (
-    <article className="max-w-3xl">
-      {elements}
-    </article>
-  );
+    paragraph.push(line);
+    index++;
+  }
+
+  flushParagraph();
+
+  return <article className="max-w-3xl">{blocks.length > 0 ? blocks : <p className="text-[#999992]">Nothing to preview yet.</p>}</article>;
 }
